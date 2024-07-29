@@ -3,11 +3,6 @@
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi;
 use embedded_hal::digital::v2::OutputPin;
-use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::pixelcolor::{Rgb565, raw::RawU16};
-use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::Pixel;
 
 /// Enumeration of instructions for the GC9A01A display.
 pub enum Instruction {
@@ -528,12 +523,11 @@ where
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn show_region(&mut self, buffer: &[u8], region: Rectangle) -> Result<(), ()> {
-        let Rectangle { top_left, size } = region;
-        let sx = top_left.x as u16;
-        let sy = top_left.y as u16;
-        let ex = (top_left.x + size.width as i32 - 1) as u16;
-        let ey = (top_left.y + size.height as i32 - 1) as u16;
+    pub fn show_region(&mut self, buffer: &[u8], top_left_x: u16, top_left_y: u16, width: u16, height: u16) -> Result<(), ()> {
+        let sx = top_left_x as u16;
+        let sy = top_left_y as u16;
+        let ex = (top_left_x + width - 1) as u16;
+        let ey = (top_left_y + height - 1) as u16;
 
         // Calculate the buffer offset for the region
         let buffer_width = self.width as usize;
@@ -545,7 +539,7 @@ where
 
         for y in sy..=ey {
             let start_index = ((y as usize) * buffer_width + (sx as usize)) * bytes_per_pixel;
-            let end_index = start_index + (size.width as usize) * bytes_per_pixel;
+            let end_index = start_index + (width as usize) * bytes_per_pixel;
 
             for chunk in buffer[start_index..end_index].chunks(32) {
                 self.write_data(chunk)?;
@@ -556,110 +550,4 @@ where
     }
 }
 
-impl<SPI, DC, CS, RST> DrawTarget for GC9A01A<SPI, DC, CS, RST>
-where
-    SPI: spi::Write<u8>,
-    DC: OutputPin,
-    CS: OutputPin,
-    RST: OutputPin,
-{
-    type Error = ();
-    type Color = Rgb565;
 
-    /// Draws an iterator of pixels on the display.
-    ///
-    /// # Arguments
-    ///
-    /// * `pixels` - Iterator of pixels to draw.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Self::Error>` indicating success or failure.
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = Pixel<Self::Color>>,
-    {
-        for Pixel(coord, color) in pixels.into_iter() {
-            // Only draw pixels that would be on screen
-            if coord.x >= 0
-                && coord.y >= 0
-                && coord.x < self.width as i32
-                && coord.y < self.height as i32
-            {
-                self.set_pixel(
-                    coord.x as u16,
-                    coord.y as u16,
-                    RawU16::from(color).into_inner(),
-                )?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Fills an area with contiguous colors.
-    ///
-    /// # Arguments
-    ///
-    /// * `area` - Area to fill.
-    /// * `colors` - Iterator of colors to fill the area with.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Self::Error>` indicating success or failure.
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = Self::Color>,
-    {
-        // Clamp area to drawable part of the display target
-        let drawable_area = area.intersection(&Rectangle::new(Point::zero(), self.size()));
-
-        if drawable_area.size != Size::zero() {
-            self.set_pixels_buffered(
-                drawable_area.top_left.x as u16,
-                drawable_area.top_left.y as u16,
-                (drawable_area.top_left.x + (drawable_area.size.width - 1) as i32) as u16,
-                (drawable_area.top_left.y + (drawable_area.size.height - 1) as i32) as u16,
-                area.points()
-                    .zip(colors)
-                    .filter(|(pos, _color)| drawable_area.contains(*pos))
-                    .map(|(_pos, color)| RawU16::from(color).into_inner()),
-            )?;
-        }
-
-        Ok(())
-    }
-
-    /// Clears the display with the given color.
-    ///
-    /// # Arguments
-    ///
-    /// * `color` - Color to clear the display with.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), Self::Error>` indicating success or failure.
-    fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.set_pixels_buffered(
-            0,
-            0,
-            self.width as u16 - 1,
-            self.height as u16 - 1,
-            core::iter::repeat(RawU16::from(color).into_inner())
-                .take((self.width * self.height) as usize),
-        )
-    }
-}
-
-impl<SPI, DC, CS, RST> OriginDimensions for GC9A01A<SPI, DC, CS, RST>
-where
-    SPI: spi::Write<u8>,
-    DC: OutputPin,
-    CS: OutputPin,
-    RST: OutputPin,
-{
-    /// Returns the size of the display.
-    fn size(&self) -> Size {
-        Size::new(self.width, self.height)
-    }
-}
