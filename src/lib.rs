@@ -3,16 +3,11 @@
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi;
 use embedded_hal::digital::v2::OutputPin;
-
-use embedded_graphics::{
-    draw_target::DrawTarget,
-    pixelcolor::{
-        raw::{RawData, RawU16},
-        Rgb565,
-    },
-    prelude::*,
-    primitives::Rectangle,
-};
+use embedded_graphics::draw_target::DrawTarget;
+use embedded_graphics::pixelcolor::{Rgb565, raw::RawU16};
+use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::Pixel;
 
 /// Enumeration of instructions for the GC9A01A display.
 pub enum Instruction {
