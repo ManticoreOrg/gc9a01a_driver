@@ -1,3 +1,4 @@
 /target
 /examples/watch/target
 examples/watch/Cargo.lock
+Cargo.lock
