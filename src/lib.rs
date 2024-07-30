@@ -6,43 +6,43 @@ use embedded_hal::digital::v2::OutputPin;
 
 /// Enumeration of instructions for the GC9A01A display.
 pub enum Instruction {
-    NOP = 0x00,
-    SWRESET = 0x01,
-    RDDID = 0x04,
-    RDDST = 0x09,
-    SLPIN = 0x10,
-    SLPOUT = 0x11,
-    PTLON = 0x12,
-    NORON = 0x13,
-    INVOFF = 0x20,
-    INVON = 0x21,
-    DISPOFF = 0x28,
-    DISPON = 0x29,
-    CASET = 0x2A,
-    RASET = 0x2B,
-    RAMWR = 0x2C,
-    RAMRD = 0x2E,
-    PTLAR = 0x30,
-    COLMOD = 0x3A,
-    MADCTL = 0x36,
-    FRMCTR1 = 0xB1,
-    FRMCTR2 = 0xB2,
-    FRMCTR3 = 0xB3,
-    INVCTR = 0xB4,
-    DISSET5 = 0xB6,
-    PWCTR1 = 0xC0,
-    PWCTR2 = 0xC1,
-    PWCTR3 = 0xC2,
-    PWCTR4 = 0xC3,
-    PWCTR5 = 0xC4,
-    VMCTR1 = 0xC5,
-    RDID1 = 0xDA,
-    RDID2 = 0xDB,
-    RDID3 = 0xDC,
-    RDID4 = 0xDD,
-    PWCTR6 = 0xFC,
-    GMCTRP1 = 0xE0,
-    GMCTRN1 = 0xE1,
+    NOP      = 0x00,  // No Operation
+    SWRESET  = 0x01,  // Software Reset
+    RDDID    = 0x04,  // Read Display Identification Information
+    RDDST    = 0x09,  // Read Display Status
+    SLPIN    = 0x10,  // Enter Sleep Mode
+    SLPOUT   = 0x11,  // Sleep Out Mode
+    PTLON    = 0x12,  // Partial Mode ON
+    NORON    = 0x13,  // Normal Display Mode ON
+    INVOFF   = 0x20,  // Display Inversion OFF
+    INVON    = 0x21,  // Display Inversion ON
+    DISPOFF  = 0x28,  // Display OFF
+    DISPON   = 0x29,  // Display ON
+    CASET    = 0x2A,  // Column Address Set
+    RASET    = 0x2B,  // Row Address Set
+    RAMWR    = 0x2C,  // Memory Write
+    RAMRD    = 0x2E,  // Memory Read
+    PTLAR    = 0x30,  // Partial Area
+    COLMOD   = 0x3A,  // Pixel Format Set
+    MADCTL   = 0x36,  // Memory Access Control
+    FRMCTR1  = 0xB1,  // Frame Rate Control (In normal mode/Full colors)
+    FRMCTR2  = 0xB2,  // Frame Rate Control (In idle mode/8 colors)
+    FRMCTR3  = 0xB3,  // Frame Rate Control (In partial mode/full colors)
+    INVCTR   = 0xB4,  // Display Inversion Control
+    DISSET5  = 0xB6,  // Display Function Control
+    PWCTR1   = 0xC0,  // Power Control 1
+    PWCTR2   = 0xC1,  // Power Control 2
+    PWCTR3   = 0xC2,  // Power Control 3
+    PWCTR4   = 0xC3,  // Power Control 4
+    PWCTR5   = 0xC4,  // Power Control 5
+    VMCTR1   = 0xC5,  // VCOM Control 1
+    RDID1    = 0xDA,  // Read ID1
+    RDID2    = 0xDB,  // Read ID2
+    RDID3    = 0xDC,  // Read ID3
+    RDID4    = 0xDD,  // Read ID4
+    PWCTR6   = 0xFC,  // Power Control 6
+    GMCTRP1  = 0xE0,  // Positive Gamma Correction
+    GMCTRN1  = 0xE1   // Negative Gamma Correction
 }
 
 /// Driver for the GC9A01A display.
@@ -126,6 +126,10 @@ where
 
     /// Initializes the display.
     ///
+    /// This function initializes the display by sending a sequence of commands and settings
+    /// to configure the display properly. It includes a hardware reset and various configuration
+    /// commands.
+    ///
     /// # Arguments
     ///
     /// * `delay` - Delay provider.
@@ -138,56 +142,56 @@ where
         DELAY: DelayMs<u8>,
     {
         self.hard_reset(delay)?;
-        self.write_command(0xEF as u8, &[])?;
-        self.write_command(0xEB as u8, &[0x14])?;
-        self.write_command(0xFE, &[])?;
-        self.write_command(0xEF, &[])?;
-        self.write_command(0xEB, &[0x14])?;
-        self.write_command(0x84, &[0x40])?;
-        self.write_command(0x85, &[0xFF])?;
-        self.write_command(0x86, &[0xFF])?;
-        self.write_command(0x87, &[0xFF])?;
-        self.write_command(0x88, &[0x0A])?;
-        self.write_command(0x89, &[0x21])?;
-        self.write_command(0x8A, &[0x00])?;
-        self.write_command(0x8B, &[0x80])?;
-        self.write_command(0x8C, &[0x01])?;
-        self.write_command(0x8D, &[0x01])?;
-        self.write_command(0x8E, &[0xFF])?;
-        self.write_command(0x8F, &[0xFF])?;
-        self.write_command(0xB6, &[0x00, 0x20])?;
-        self.write_command(0x36, &[0x98])?;
-        self.write_command(0x3A, &[0x05])?;
-        self.write_command(0x90, &[0x08, 0x08, 0x08, 0x08])?;
-        self.write_command(0xBD, &[0x06])?;
-        self.write_command(0xBC, &[0x00])?;
-        self.write_command(0xFF, &[0x60, 0x01, 0x04])?;
-        self.write_command(0xC3, &[0x13])?;
-        self.write_command(0xC4, &[0x13])?;
-        self.write_command(0xC9, &[0x22])?;
-        self.write_command(0xBE, &[0x11])?;
-        self.write_command(0xE1, &[0x10, 0x0E])?;
-        self.write_command(0xDF, &[0x21, 0x0C, 0x02])?;
-        self.write_command(0xF0, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?;
-        self.write_command(0xF1, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?;
-        self.write_command(0xF2, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?;
-        self.write_command(0xF3, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?;
-        self.write_command(0xED, &[0x1B, 0x0B])?;
-        self.write_command(0xAE, &[0x77])?;
-        self.write_command(0xCD, &[0x63])?;
-        self.write_command(0x70, &[0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03])?;
-        self.write_command(0xE8, &[0x34])?;
-        self.write_command(0x62, &[0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70])?;
-        self.write_command(0x63, &[0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70])?;
-        self.write_command(0x64, &[0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07])?;
-        self.write_command(0x66, &[0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00])?;
-        self.write_command(0x67, &[0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98])?;
-        self.write_command(0x74, &[0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00])?;
-        self.write_command(0x98, &[0x3E, 0x07])?;
-        self.write_command(0x35, &[])?;
-        self.write_command(0x21, &[])?;
-        self.write_command(0x11, &[])?;
-        self.write_command(0x29, &[])?;
+        self.write_command(0xEF as u8, &[])?;               // Inter Register Enable 2 (0xEF)
+        self.write_command(0xEB as u8, &[0x14])?;           // Not found in the PDF
+        self.write_command(0xFE, &[])?;                     // Inter Register Enable 1 (0xFE)
+        self.write_command(0xEF, &[])?;                     // Inter Register Enable 2 (0xEF)
+        self.write_command(0xEB, &[0x14])?;                 // Not found in the PDF
+        self.write_command(0x84, &[0x40])?;                 // Not found in the PDF
+        self.write_command(0x85, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0x86, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0x87, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0x88, &[0x0A])?;                 // Not found in the PDF
+        self.write_command(0x89, &[0x21])?;                 // Not found in the PDF
+        self.write_command(0x8A, &[0x00])?;                 // Not found in the PDF
+        self.write_command(0x8B, &[0x80])?;                 // Not found in the PDF
+        self.write_command(0x8C, &[0x01])?;                 // Not found in the PDF
+        self.write_command(0x8D, &[0x01])?;                 // Not found in the PDF
+        self.write_command(0x8E, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0x8F, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0xB6, &[0x00, 0x20])?;           // Display Function Control (0xB6)
+        self.write_command(0x36, &[0x98])?;                 // Memory Access Control (MADCTL)
+        self.write_command(0x3A, &[0x05])?;                 // Pixel Format Set (COLMOD)
+        self.write_command(0x90, &[0x08, 0x08, 0x08, 0x08])?; // Not found in the PDF
+        self.write_command(0xBD, &[0x06])?;                 // Not found in the PDF
+        self.write_command(0xBC, &[0x00])?;                 // Not found in the PDF
+        self.write_command(0xFF, &[0x60, 0x01, 0x04])?;     // Not found in the PDF
+        self.write_command(0xC3, &[0x13])?;                 // Power Control 4 (PWCTR4)
+        self.write_command(0xC4, &[0x13])?;                 // Power Control 5 (PWCTR5)
+        self.write_command(0xC9, &[0x22])?;                 // Not found in the PDF
+        self.write_command(0xBE, &[0x11])?;                 // Not found in the PDF
+        self.write_command(0xE1, &[0x10, 0x0E])?;           // Negative Gamma Correction (GMCTRN1)
+        self.write_command(0xDF, &[0x21, 0x0C, 0x02])?;     // Not found in the PDF
+        self.write_command(0xF0, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Positive Gamma Correction (GMCTRP1)
+        self.write_command(0xF1, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?; // SET_GAMMA2 (0xF1)
+        self.write_command(0xF2, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Not found in the PDF
+        self.write_command(0xF3, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?; // Not found in the PDF
+        self.write_command(0xED, &[0x1B, 0x0B])?;           // Not found in the PDF
+        self.write_command(0xAE, &[0x77])?;                 // Not found in the PDF
+        self.write_command(0xCD, &[0x63])?;                 // Not found in the PDF
+        self.write_command(0x70, &[0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03])?; // Not found in the PDF
+        self.write_command(0xE8, &[0x34])?;                 // Frame Rate Control (FRMCTR1)
+        self.write_command(0x62, &[0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70])?; // Not found in the PDF
+        self.write_command(0x63, &[0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70])?; // Not found in the PDF
+        self.write_command(0x64, &[0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07])?; // Not found in the PDF
+        self.write_command(0x66, &[0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00])?; // Not found in the PDF
+        self.write_command(0x67, &[0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98])?; // Not found in the PDF
+        self.write_command(0x74, &[0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00])?; // Not found in the PDF
+        self.write_command(0x98, &[0x3E, 0x07])?;           // Not found in the PDF
+        self.write_command(0x35, &[])?;                     // Not found in the PDF
+        self.write_command(0x21, &[])?;                     // Display Inversion ON (INVON)
+        self.write_command(0x11, &[])?;                     // Sleep Out Mode (SLPOUT)
+        self.write_command(0x29, &[])?;                     // Display ON (DISPON)
 
         delay.delay_ms(200);
 
@@ -195,6 +199,9 @@ where
     }
 
     /// Performs a hard reset of the display.
+    ///
+    /// This function performs a hard reset by toggling the reset pin, ensuring the display
+    /// is in a known state before initialization.
     ///
     /// # Arguments
     ///
@@ -219,6 +226,8 @@ where
 
     /// Writes a command to the display.
     ///
+    /// This function sends a command followed by optional parameters to the display.
+    ///
     /// # Arguments
     ///
     /// * `command` - Command to write.
@@ -242,6 +251,8 @@ where
 
     /// Starts data transmission.
     ///
+    /// Sets the data/command pin to indicate data mode for subsequent transmissions.
+    ///
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
@@ -250,6 +261,8 @@ where
     }
 
     /// Writes data to the display.
+    ///
+    /// This function writes data to the display through the SPI interface.
     ///
     /// # Arguments
     ///
@@ -269,6 +282,8 @@ where
 
     /// Writes a data word to the display.
     ///
+    /// This function writes a 16-bit word to the display.
+    ///
     /// # Arguments
     ///
     /// * `value` - Data word to write.
@@ -281,6 +296,8 @@ where
     }
 
     /// Writes buffered data words to the display.
+    ///
+    /// This function writes an iterator of 16-bit words to the display in buffered mode.
     ///
     /// # Arguments
     ///
@@ -306,6 +323,8 @@ where
     }
 
     /// Sets the orientation of the display.
+    ///
+    /// This function sets the display orientation to one of the predefined modes.
     ///
     /// # Arguments
     ///
@@ -336,6 +355,8 @@ where
 
     /// Sets the address window for the display.
     ///
+    /// This function sets the address window for subsequent drawing commands.
+    ///
     /// # Arguments
     ///
     /// * `sx` - Start x-coordinate.
@@ -359,6 +380,8 @@ where
 
     /// Sets a pixel color at the given coordinates.
     ///
+    /// This function sets the color of a single pixel at the specified coordinates.
+    ///
     /// # Arguments
     ///
     /// * `x` - X-coordinate.
@@ -376,6 +399,8 @@ where
     }
 
     /// Writes pixel colors sequentially into the current drawing window.
+    ///
+    /// This function writes a sequence of pixel colors into the current drawing window.
     ///
     /// # Arguments
     ///
@@ -395,6 +420,8 @@ where
 
     /// Writes buffered pixel colors sequentially into the current drawing window.
     ///
+    /// This function writes a sequence of pixel colors into the current drawing window in buffered mode.
+    ///
     /// # Arguments
     ///
     /// * `colors` - Pixel colors to write.
@@ -412,6 +439,8 @@ where
     }
 
     /// Sets pixel colors at the given drawing window.
+    ///
+    /// This function sets the colors of pixels in a specified rectangular region.
     ///
     /// # Arguments
     ///
@@ -438,6 +467,8 @@ where
 
     /// Sets buffered pixel colors at the given drawing window.
     ///
+    /// This function sets the colors of pixels in a specified rectangular region in buffered mode.
+    ///
     /// # Arguments
     ///
     /// * `sx` - Start x-coordinate.
@@ -463,6 +494,9 @@ where
 
     /// Draws an image from a slice of RGB565 data.
     ///
+    /// This function draws an image from a slice of pixel data in RGB565 format.
+    /// It assumes the image dimensions match the display dimensions.
+    ///
     /// # Arguments
     ///
     /// * `image_data` - Image data to draw.
@@ -471,7 +505,6 @@ where
     ///
     /// `Result<(), ()>` indicating success or failure.
     pub fn draw_image(&mut self, image_data: &[u8]) -> Result<(), ()> {
-        // Assuming the image dimensions match the display dimensions
         let width = self.width as u16;
         let height = self.height as u16;
 
@@ -487,6 +520,9 @@ where
     }
 
     /// Displays the provided buffer on the screen.
+    ///
+    /// This function writes the entire buffer to the display, assuming the buffer
+    /// contains pixel data for the full display area.
     ///
     /// # Arguments
     ///
@@ -515,32 +551,46 @@ where
 
     /// Updates only the specified region of the display with the provided buffer.
     ///
+    /// This function updates a specified rectangular region of the display with the pixel data 
+    /// provided in the buffer. It calculates the necessary offsets and addresses to update only 
+    /// the designated area, ensuring efficient display refresh.
+    ///
     /// # Arguments
     ///
-    /// * `buffer` - Buffer to display.
-    /// * `region` - Region to update.
+    /// * `buffer` - A slice of bytes representing the pixel data in RGB565 format.
+    /// * `top_left_x` - The x-coordinate of the top-left corner of the region to update.
+    /// * `top_left_y` - The y-coordinate of the top-left corner of the region to update.
+    /// * `width` - The width of the region to update.
+    /// * `height` - The height of the region to update.
     ///
     /// # Returns
     ///
-    /// `Result<(), ()>` indicating success or failure.
+    /// `Result<(), ()>` indicating success (`Ok`) or failure (`Err`).
     pub fn show_region(&mut self, buffer: &[u8], top_left_x: u16, top_left_y: u16, width: u16, height: u16) -> Result<(), ()> {
-        let sx = top_left_x as u16;
-        let sy = top_left_y as u16;
-        let ex = (top_left_x + width - 1) as u16;
-        let ey = (top_left_y + height - 1) as u16;
+        let sx = top_left_x as u16;  // Start x-coordinate
+        let sy = top_left_y as u16;  // Start y-coordinate
+        let ex = (top_left_x + width - 1) as u16;  // End x-coordinate
+        let ey = (top_left_y + height - 1) as u16; // End y-coordinate
 
         // Calculate the buffer offset for the region
-        let buffer_width = self.width as usize;
-        let bytes_per_pixel = 2; // For RGB565
+        let buffer_width = self.width as usize;  // Width of the buffer
+        let bytes_per_pixel = 2;  // Number of bytes per pixel in RGB565 format
 
+        // Set the address window for the region to be updated
         self.set_address_window(sx, sy, ex, ey)?;
+        
+        // Send the command to write to RAM
         self.write_command(Instruction::RAMWR as u8, &[])?;
+        
+        // Start data transmission
         self.start_data()?;
 
+        // Iterate over each row in the region
         for y in sy..=ey {
             let start_index = ((y as usize) * buffer_width + (sx as usize)) * bytes_per_pixel;
             let end_index = start_index + (width as usize) * bytes_per_pixel;
 
+            // Write data to the display in chunks of 32 bytes
             for chunk in buffer[start_index..end_index].chunks(32) {
                 self.write_data(chunk)?;
             }
@@ -549,5 +599,3 @@ where
         Ok(())
     }
 }
-
-
