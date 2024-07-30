@@ -3,9 +3,14 @@
 
 GC9A01A Display Driver This is a Rust driver for the GC9A01A display, designed to work with embedded systems using the `embedded-hal` traits. The driver supports various display commands and allows for efficient updating of the display content. ## Features - Hardware SPI interface - Support for RGB and BGR color formats - Flexible display orientation - Partial and full display updates - Buffered pixel writes for efficient data transmission 
 
-## Usage ### Dependencies Add the following dependencies to your `Cargo.toml`: 
+## Usage 
 
-```toml [dependencies] embedded-hal = "0.2.6"API Documentation
+### Dependencies Add the following dependencies to your `Cargo.toml`: 
+
+``` toml 
+[dependencies] 
+embedded-hal = "0.2.6"
+gc9a01a_driver = { version = "0.1.2" }
 ```
 
 ### Example
@@ -83,6 +88,8 @@ fn main() {
 }
 ```
 -----------------
+
+### API Documentation
 
 ### GC9A01A Struct
 
