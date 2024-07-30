@@ -8,43 +8,43 @@ use embedded_hal::digital::v2::OutputPin;
 
 /// Enumeration of instructions for the GC9A01A display.
 pub enum Instruction {
-    NOP      = 0x00,  // No Operation
-    SWRESET  = 0x01,  // Software Reset
-    RDDID    = 0x04,  // Read Display Identification Information
-    RDDST    = 0x09,  // Read Display Status
-    SLPIN    = 0x10,  // Enter Sleep Mode
-    SLPOUT   = 0x11,  // Sleep Out Mode
-    PTLON    = 0x12,  // Partial Mode ON
-    NORON    = 0x13,  // Normal Display Mode ON
-    INVOFF   = 0x20,  // Display Inversion OFF
-    INVON    = 0x21,  // Display Inversion ON
-    DISPOFF  = 0x28,  // Display OFF
-    DISPON   = 0x29,  // Display ON
-    CASET    = 0x2A,  // Column Address Set
-    RASET    = 0x2B,  // Row Address Set
-    RAMWR    = 0x2C,  // Memory Write
-    RAMRD    = 0x2E,  // Memory Read
-    PTLAR    = 0x30,  // Partial Area
-    COLMOD   = 0x3A,  // Pixel Format Set
-    MADCTL   = 0x36,  // Memory Access Control
-    FRMCTR1  = 0xB1,  // Frame Rate Control (In normal mode/Full colors)
-    FRMCTR2  = 0xB2,  // Frame Rate Control (In idle mode/8 colors)
-    FRMCTR3  = 0xB3,  // Frame Rate Control (In partial mode/full colors)
-    INVCTR   = 0xB4,  // Display Inversion Control
-    DISSET5  = 0xB6,  // Display Function Control
-    PWCTR1   = 0xC0,  // Power Control 1
-    PWCTR2   = 0xC1,  // Power Control 2
-    PWCTR3   = 0xC2,  // Power Control 3
-    PWCTR4   = 0xC3,  // Power Control 4
-    PWCTR5   = 0xC4,  // Power Control 5
-    VMCTR1   = 0xC5,  // VCOM Control 1
-    RDID1    = 0xDA,  // Read ID1
-    RDID2    = 0xDB,  // Read ID2
-    RDID3    = 0xDC,  // Read ID3
-    RDID4    = 0xDD,  // Read ID4
-    PWCTR6   = 0xFC,  // Power Control 6
-    GMCTRP1  = 0xE0,  // Positive Gamma Correction
-    GMCTRN1  = 0xE1   // Negative Gamma Correction
+    Nop      = 0x00,  // No Operation
+    SwReset  = 0x01,  // Software Reset
+    RddId    = 0x04,  // Read Display Identification Information
+    RddSt    = 0x09,  // Read Display Status
+    SlpIn    = 0x10,  // Enter Sleep Mode
+    SlpOut   = 0x11,  // Sleep Out Mode
+    PtlOn    = 0x12,  // Partial Mode ON
+    NorOn    = 0x13,  // Normal Display Mode ON
+    InvOff   = 0x20,  // Display Inversion OFF
+    InvOn    = 0x21,  // Display Inversion ON
+    DispOff  = 0x28,  // Display OFF
+    DispOn   = 0x29,  // Display ON
+    CaSet    = 0x2A,  // Column Address Set
+    RaSet    = 0x2B,  // Row Address Set
+    RamWr    = 0x2C,  // Memory Write
+    RamRd    = 0x2E,  // Memory Read
+    PtlAr    = 0x30,  // Partial Area
+    ColMod   = 0x3A,  // Pixel Format Set
+    MadCtl   = 0x36,  // Memory Access Control
+    FrmCtr1  = 0xB1,  // Frame Rate Control (In normal mode/Full colors)
+    FrmCtr2  = 0xB2,  // Frame Rate Control (In idle mode/8 colors)
+    FrmCtr3  = 0xB3,  // Frame Rate Control (In partial mode/full colors)
+    InvCtr   = 0xB4,  // Display Inversion Control
+    DisSet5  = 0xB6,  // Display Function Control
+    PwCtr1   = 0xC0,  // Power Control 1
+    PwCtr2   = 0xC1,  // Power Control 2
+    PwCtr3   = 0xC2,  // Power Control 3
+    PwCtr4   = 0xC3,  // Power Control 4
+    PwCtr5   = 0xC4,  // Power Control 5
+    VmCtr1   = 0xC5,  // VCOM Control 1
+    RdId1    = 0xDA,  // Read ID1
+    RdId2    = 0xDB,  // Read ID2
+    RdId3    = 0xDC,  // Read ID3
+    RdId4    = 0xDD,  // Read ID4
+    PwCtr6   = 0xFC,  // Power Control 6
+    GmcTrp1  = 0xE0,  // Positive Gamma Correction
+    GmcTrn1  = 0xE1   // Negative Gamma Correction
 }
 
 /// Driver for the GC9A01A display.
@@ -144,8 +144,8 @@ where
         DELAY: DelayMs<u8>,
     {
         self.hard_reset(delay)?;
-        self.write_command(0xEF as u8, &[])?;               // Inter Register Enable 2 (0xEF)
-        self.write_command(0xEB as u8, &[0x14])?;
+        self.write_command(0xEF, &[])?;               // Inter Register Enable 2 (0xEF)
+        self.write_command(0xEB, &[0x14])?;
         self.write_command(0xFE, &[])?;                     // Inter Register Enable 1 (0xFE)
         self.write_command(0xEF, &[])?;                     // Inter Register Enable 2 (0xEF)
         self.write_command(0xEB, &[0x14])?;
@@ -161,20 +161,20 @@ where
         self.write_command(0x8D, &[0x01])?;
         self.write_command(0x8E, &[0xFF])?;
         self.write_command(0x8F, &[0xFF])?;
-        self.write_command(0xB6, &[0x00, 0x20])?;           // Display Function Control (0xB6)
-        self.write_command(0x36, &[0x98])?;                 // Memory Access Control (MADCTL)
-        self.write_command(0x3A, &[0x05])?;                 // Pixel Format Set (COLMOD)
+        self.write_command(Instruction::DisSet5 as u8, &[0x00, 0x20])?;           // Display Function Control (0xB6)
+        self.write_command(Instruction::MadCtl as u8, &[0x98])?;                 // Memory Access Control (MADCTL)
+        self.write_command(Instruction::ColMod as u8, &[0x05])?;                 // Pixel Format Set (COLMOD)
         self.write_command(0x90, &[0x08, 0x08, 0x08, 0x08])?;
         self.write_command(0xBD, &[0x06])?;
         self.write_command(0xBC, &[0x00])?;
         self.write_command(0xFF, &[0x60, 0x01, 0x04])?;
-        self.write_command(0xC3, &[0x13])?;                 // Power Control 4 (PWCTR4)
-        self.write_command(0xC4, &[0x13])?;                 // Power Control 5 (PWCTR5)
+        self.write_command(Instruction::PwCtr4 as u8, &[0x13])?;                 // Power Control 4 (PWCTR4)
+        self.write_command(Instruction::PwCtr5 as u8, &[0x13])?;                 // Power Control 5 (PWCTR5)
         self.write_command(0xC9, &[0x22])?;
         self.write_command(0xBE, &[0x11])?;
-        self.write_command(0xE1, &[0x10, 0x0E])?;           // Negative Gamma Correction (GMCTRN1)
+        self.write_command(Instruction::GmcTrn1 as u8, &[0x10, 0x0E])?;           // Negative Gamma Correction (GMCTRN1)
         self.write_command(0xDF, &[0x21, 0x0C, 0x02])?;
-        self.write_command(0xF0, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Positive Gamma Correction (GMCTRP1)
+        self.write_command(Instruction::GmcTrp1 as u8, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Positive Gamma Correction (GMCTRP1)
         self.write_command(0xF1, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?; // SET_GAMMA2 (0xF1)
         self.write_command(0xF2, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?;
         self.write_command(0xF3, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?;
@@ -182,7 +182,7 @@ where
         self.write_command(0xAE, &[0x77])?;
         self.write_command(0xCD, &[0x63])?;
         self.write_command(0x70, &[0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03])?;
-        self.write_command(0xE8, &[0x34])?;                 // Frame Rate Control (FRMCTR1)
+        self.write_command(Instruction::FrmCtr1 as u8, &[0x34])?;                 // Frame Rate Control (FRMCTR1)
         self.write_command(0x62, &[0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70])?;
         self.write_command(0x63, &[0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70])?;
         self.write_command(0x64, &[0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07])?;
@@ -190,10 +190,10 @@ where
         self.write_command(0x67, &[0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98])?;
         self.write_command(0x74, &[0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00])?;
         self.write_command(0x98, &[0x3E, 0x07])?;
-        self.write_command(0x35, &[])?;
-        self.write_command(0x21, &[])?;                     // Display Inversion ON (INVON)
-        self.write_command(0x11, &[])?;                     // Sleep Out Mode (SLPOUT)
-        self.write_command(0x29, &[])?;                     // Display ON (DISPON)
+        self.write_command(Instruction::CaSet as u8, &[])?;
+        self.write_command(Instruction::InvOn as u8, &[])?;                     // Display Inversion ON (INVON)
+        self.write_command(Instruction::SlpOut as u8, &[])?;                     // Sleep Out Mode (SLPOUT)
+        self.write_command(Instruction::DispOn as u8, &[])?;                     // Display ON (DISPON)
 
         delay.delay_ms(200);
 
@@ -337,9 +337,9 @@ where
     /// `Result<(), ()>` indicating success or failure.
     pub fn set_orientation(&mut self, orientation: &Orientation) -> Result<(), ()> {
         if self.rgb {
-            self.write_command(Instruction::MADCTL as u8, &[*orientation as u8])?;
+            self.write_command(Instruction::MadCtl as u8, &[*orientation as u8])?;
         } else {
-            self.write_command(Instruction::MADCTL as u8, &[*orientation as u8 | 0x08])?;
+            self.write_command(Instruction::MadCtl as u8, &[*orientation as u8 | 0x08])?;
         }
         Ok(())
     }
@@ -361,23 +361,23 @@ where
     ///
     /// # Arguments
     ///
-    /// * `sx` - Start x-coordinate.
-    /// * `sy` - Start y-coordinate.
-    /// * `ex` - End x-coordinate.
-    /// * `ey` - End y-coordinate.
+    /// * `start_x` - Start x-coordinate.
+    /// * `start_y` - Start y-coordinate.
+    /// * `end_x` - End x-coordinate.
+    /// * `end_y` - End y-coordinate.
     ///
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn set_address_window(&mut self, sx: u16, sy: u16, ex: u16, ey: u16) -> Result<(), ()> {
-        self.write_command(Instruction::CASET as u8, &[])?;
+    pub fn set_address_window(&mut self, start_x: u16, start_y: u16, end_x: u16, end_y: u16) -> Result<(), ()> {
+        self.write_command(Instruction::CaSet as u8, &[])?;
         self.start_data()?;
-        self.write_word(sx + self.dx)?;
-        self.write_word(ex + self.dx)?;
-        self.write_command(Instruction::RASET as u8, &[])?;
+        self.write_word(start_x + self.dx)?;
+        self.write_word(end_x + self.dx)?;
+        self.write_command(Instruction::RaSet as u8, &[])?;
         self.start_data()?;
-        self.write_word(sy + self.dy)?;
-        self.write_word(ey + self.dy)
+        self.write_word(start_y + self.dy)?;
+        self.write_word(end_y + self.dy)
     }
 
     /// Sets a pixel color at the given coordinates.
@@ -395,7 +395,7 @@ where
     /// `Result<(), ()>` indicating success or failure.
     pub fn set_pixel(&mut self, x: u16, y: u16, color: u16) -> Result<(), ()> {
         self.set_address_window(x, y, x, y)?;
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         self.write_word(color)
     }
@@ -412,7 +412,7 @@ where
     ///
     /// `Result<(), ()>` indicating success or failure.
     pub fn write_pixels<P: IntoIterator<Item = u16>>(&mut self, colors: P) -> Result<(), ()> {
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         for color in colors {
             self.write_word(color)?;
@@ -435,7 +435,7 @@ where
         &mut self,
         colors: P,
     ) -> Result<(), ()> {
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         self.write_words_buffered(colors)
     }
@@ -446,10 +446,10 @@ where
     ///
     /// # Arguments
     ///
-    /// * `sx` - Start x-coordinate.
-    /// * `sy` - Start y-coordinate.
-    /// * `ex` - End x-coordinate.
-    /// * `ey` - End y-coordinate.
+    /// * `start_x` - Start x-coordinate.
+    /// * `start_y` - Start y-coordinate.
+    /// * `end_x` - End x-coordinate.
+    /// * `end_y` - End y-coordinate.
     /// * `colors` - Pixel colors to write.
     ///
     /// # Returns
@@ -457,13 +457,13 @@ where
     /// `Result<(), ()>` indicating success or failure.
     pub fn set_pixels<P: IntoIterator<Item = u16>>(
         &mut self,
-        sx: u16,
-        sy: u16,
-        ex: u16,
-        ey: u16,
+        start_x: u16,
+        start_y: u16,
+        end_x: u16,
+        end_y: u16,
         colors: P,
     ) -> Result<(), ()> {
-        self.set_address_window(sx, sy, ex, ey)?;
+        self.set_address_window(start_x, start_y, end_x, end_y)?;
         self.write_pixels(colors)
     }
 
@@ -473,10 +473,10 @@ where
     ///
     /// # Arguments
     ///
-    /// * `sx` - Start x-coordinate.
-    /// * `sy` - Start y-coordinate.
-    /// * `ex` - End x-coordinate.
-    /// * `ey` - End y-coordinate.
+    /// * `start_x` - Start x-coordinate.
+    /// * `start_y` - Start y-coordinate.
+    /// * `end_x` - End x-coordinate.
+    /// * `end_y` - End y-coordinate.
     /// * `colors` - Pixel colors to write.
     ///
     /// # Returns
@@ -484,13 +484,13 @@ where
     /// `Result<(), ()>` indicating success or failure.
     pub fn set_pixels_buffered<P: IntoIterator<Item = u16>>(
         &mut self,
-        sx: u16,
-        sy: u16,
-        ex: u16,
-        ey: u16,
+        start_x: u16,
+        start_y: u16,
+        end_x: u16,
+        end_y: u16,
         colors: P,
     ) -> Result<(), ()> {
-        self.set_address_window(sx, sy, ex, ey)?;
+        self.set_address_window(start_x, start_y, end_x, end_y)?;
         self.write_pixels_buffered(colors)
     }
 
@@ -511,7 +511,7 @@ where
         let height = self.height as u16;
 
         self.set_address_window(0, 0, width - 1, height - 1)?;
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         
         for chunk in image_data.chunks(32) {
@@ -534,13 +534,13 @@ where
     ///
     /// `Result<(), ()>` indicating success or failure.
     pub fn show(&mut self, buffer: &[u8]) -> Result<(), ()> {
-        self.write_command(Instruction::CASET as u8, &[])?;
+        self.write_command(Instruction::CaSet as u8, &[])?;
         self.write_data(&[0x00, 0x00, 0x00, 0xEF])?;
 
-        self.write_command(Instruction::RASET as u8, &[])?;
+        self.write_command(Instruction::RaSet as u8, &[])?;
         self.write_data(&[0x00, 0x00, 0x00, 0xEF])?;
 
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
 
         self.cs.set_high().map_err(|_| ())?;
         self.dc.set_high().map_err(|_| ())?;
@@ -569,27 +569,27 @@ where
     ///
     /// `Result<(), ()>` indicating success (`Ok`) or failure (`Err`).
     pub fn show_region(&mut self, buffer: &[u8], top_left_x: u16, top_left_y: u16, width: u16, height: u16) -> Result<(), ()> {
-        let sx = top_left_x as u16;  // Start x-coordinate
-        let sy = top_left_y as u16;  // Start y-coordinate
-        let ex = (top_left_x + width - 1) as u16;  // End x-coordinate
-        let ey = (top_left_y + height - 1) as u16; // End y-coordinate
+        let start_x = top_left_x as u16;  // Start x-coordinate
+        let start_y = top_left_y as u16;  // Start y-coordinate
+        let end_x = (top_left_x + width - 1) as u16;  // End x-coordinate
+        let end_y = (top_left_y + height - 1) as u16; // End y-coordinate
 
         // Calculate the buffer offset for the region
         let buffer_width = self.width as usize;  // Width of the buffer
         let bytes_per_pixel = 2;  // Number of bytes per pixel in RGB565 format
 
         // Set the address window for the region to be updated
-        self.set_address_window(sx, sy, ex, ey)?;
+        self.set_address_window(start_x, start_y, end_x, end_y)?;
         
         // Send the command to write to RAM
-        self.write_command(Instruction::RAMWR as u8, &[])?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
         
         // Start data transmission
         self.start_data()?;
 
         // Iterate over each row in the region
-        for y in sy..=ey {
-            let start_index = ((y as usize) * buffer_width + (sx as usize)) * bytes_per_pixel;
+        for y in start_y..=end_y {
+            let start_index = ((y as usize) * buffer_width + (start_x as usize)) * bytes_per_pixel;
             let end_index = start_index + (width as usize) * bytes_per_pixel;
 
             // Write data to the display in chunks of 32 bytes
