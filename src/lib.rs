@@ -393,7 +393,7 @@ where
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn set_pixel(&mut self, x: u16, y: u16, color: u16) -> Result<(), ()> {
+    pub fn write_pixel(&mut self, x: u16, y: u16, color: u16) -> Result<(), ()> {
         self.set_address_window(x, y, x, y)?;
         self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
@@ -411,7 +411,7 @@ where
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn write_pixels<P: IntoIterator<Item = u16>>(&mut self, colors: P) -> Result<(), ()> {
+    pub fn write_pixels_continuous<P: IntoIterator<Item = u16>>(&mut self, colors: P) -> Result<(), ()> {
         self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         for color in colors {
@@ -455,7 +455,7 @@ where
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn set_pixels<P: IntoIterator<Item = u16>>(
+    pub fn set_window_and_write_pixels<P: IntoIterator<Item = u16>>(
         &mut self,
         start_x: u16,
         start_y: u16,
@@ -464,7 +464,7 @@ where
         colors: P,
     ) -> Result<(), ()> {
         self.set_address_window(start_x, start_y, end_x, end_y)?;
-        self.write_pixels(colors)
+        self.write_pixels_continuous(colors)
     }
 
     /// Sets buffered pixel colors at the given drawing window.
@@ -482,7 +482,7 @@ where
     /// # Returns
     ///
     /// `Result<(), ()>` indicating success or failure.
-    pub fn set_pixels_buffered<P: IntoIterator<Item = u16>>(
+    pub fn set_window_and_write_pixels_buffered<P: IntoIterator<Item = u16>>(
         &mut self,
         start_x: u16,
         start_y: u16,
@@ -625,7 +625,7 @@ where
                 && coord.x < self.width as i32
                 && coord.y < self.height as i32
             {
-                self.set_pixel(
+                self.write_pixel(
                     coord.x as u16,
                     coord.y as u16,
                     color_value,

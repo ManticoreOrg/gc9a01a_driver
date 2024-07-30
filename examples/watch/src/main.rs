@@ -167,8 +167,10 @@ fn main() -> ! {
 
 
     // Infinite colour wheel loop
+    /* 
     let mut l: i32 = 0;
     let mut c = Rgb565::RED;
+    */
     loop {
         /* 
         Line::new(Point::new(0, l), Point::new((LCD_WIDTH - 1) as i32, l))
@@ -186,5 +188,6 @@ fn main() -> ! {
             }
         }
         */
+        delay.delay_ms(1000);
     }
 }
