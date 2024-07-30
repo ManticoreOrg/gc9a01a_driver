@@ -9,6 +9,4 @@ repository = "https://github.com/GordonCox/gc9a01a_driver.git"
 
 [dependencies]
 embedded-hal = { version = "0.2" }
-
-[dev-dependencies]
-embedded-graphics.workspace = true
+embedded-graphics = "0.7.1"

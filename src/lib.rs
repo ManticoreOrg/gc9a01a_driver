@@ -611,19 +611,25 @@ where
     RST: OutputPin,
 {
     type Color = Rgb565;
-    type Error = core::convert::Infallible;
+    type Error = ();
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
-        for Pixel(coord, color) in pixels {
-            if coord.x >= 0 && coord.x < self.width as i32 && coord.y >= 0 && coord.y < self.height as i32 {
-                let color_value = color.into_storage();
-                self.set_address_window(coord.x as u16, coord.y as u16, coord.x as u16, coord.y as u16).map_err(|_| core::convert::Infallible)?;
-                self.write_command(Instruction::RAMWR as u8, &[]).map_err(|_| core::convert::Infallible)?;
-                self.start_data().map_err(|_| core::convert::Infallible)?;
-                self.write_word(color_value).map_err(|_| core::convert::Infallible)?;
+        for Pixel(coord, color) in pixels.into_iter() {
+            let color_value = color.into_storage();
+            // Only draw pixels that would be on screen
+            if coord.x >= 0
+                && coord.y >= 0
+                && coord.x < self.width as i32
+                && coord.y < self.height as i32
+            {
+                self.set_pixel(
+                    coord.x as u16,
+                    coord.y as u16,
+                    color_value,
+                )?;
             }
         }
         Ok(())
