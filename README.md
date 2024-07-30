@@ -1,7 +1,9 @@
 # gc9a01a_driver
  gc9a01a_driver
 
-GC9A01A Display Driver This is a Rust driver for the GC9A01A display, designed to work with embedded systems using the `embedded-hal` traits. The driver supports various display commands and allows for efficient updating of the display content. ## Features - Hardware SPI interface - Support for RGB and BGR color formats - Flexible display orientation - Partial and full display updates - Buffered pixel writes for efficient data transmission 
+GC9A01A Display Driver This is a Rust driver for the GC9A01A display, designed to work with embedded systems using the `embedded-hal` traits. The driver supports various display commands and allows for efficient updating of the display content. 
+
+## Features - Hardware SPI interface - Support for RGB and BGR color formats - Flexible display orientation - Partial and full display updates - Buffered pixel writes for efficient data transmission 
 
 ## Usage 
 
@@ -88,95 +90,6 @@ fn main() {
 }
 ```
 -----------------
-
-### API Documentation
-
-### GC9A01A Struct
-
-#### `new`
-
-Creates a new driver instance.
-
-**Arguments:**
-
--   `spi`: SPI interface.
--   `dc`: Data/command pin.
--   `cs`: Chip select pin.
--   `rst`: Reset pin.
--   `rgb`: Whether the display is RGB (true) or BGR (false).
--   `width`: Width of the display.
--   `height`: Height of the display.
-
-#### `init`
-
-Initializes the display.
-
-**Arguments:**
-
--   `delay`: Delay provider.
-
-**Returns:**
-
--   `Result<(), ()>` indicating success or failure.
-
-#### `set_orientation`
-
-Sets the display orientation.
-
-**Arguments:**
-
--   `orientation`: Orientation to set.
-
-**Returns:**
-
--   `Result<(), ()>` indicating success or failure.
-
-#### `set_pixel`
-
-Sets a single pixel at the given coordinates.
-
-**Arguments:**
-
--   `x`: X-coordinate.
--   `y`: Y-coordinate.
--   `color`: Color of the pixel.
-
-**Returns:**
-
--   `Result<(), ()>` indicating success or failure.
-
-#### `show_region`
-
-Updates a specified region of the display with the provided buffer.
-
-**Arguments:**
-
--   `buffer`: Buffer to display.
--   `top_left_x`: The x-coordinate of the top-left corner of the region to update.
--   `top_left_y`: The y-coordinate of the top-left corner of the region to update.
--   `width`: The width of the region to update.
--   `height`: The height of the region to update.
-
-**Returns:**
-
--   `Result<(), ()>` indicating success or failure.
-
-#### `draw_image`
-
-Draws an image from a slice of RGB565 data.
-
-**Arguments:**
-
--   `image_data`: Image data to draw.
-
-**Returns:**
-
--   `Result<(), ()>` indicating success or failure.
-
-License
--------
-
-This project is licensed under the MIT License. See the LICENSE file for details.
 
 API Documentation
 -----------------

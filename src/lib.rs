@@ -1,7 +1,9 @@
 #![no_std]
+#![no_main]
 
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::blocking::spi;
+use embedded_hal::blocking::spi::Write;
 use embedded_hal::digital::v2::OutputPin;
 
 /// Enumeration of instructions for the GC9A01A display.
@@ -48,7 +50,7 @@ pub enum Instruction {
 /// Driver for the GC9A01A display.
 pub struct GC9A01A<SPI, DC, CS, RST>
 where
-    SPI: spi::Write<u8>,
+    SPI: Write<u8>,
     DC: OutputPin,
     CS: OutputPin,
     RST: OutputPin,
@@ -86,7 +88,7 @@ pub enum Orientation {
 
 impl<SPI, DC, CS, RST> GC9A01A<SPI, DC, CS, RST>
 where
-    SPI: spi::Write<u8>,
+    SPI: Write<u8>,
     DC: OutputPin,
     CS: OutputPin,
     RST: OutputPin,
@@ -143,52 +145,52 @@ where
     {
         self.hard_reset(delay)?;
         self.write_command(0xEF as u8, &[])?;               // Inter Register Enable 2 (0xEF)
-        self.write_command(0xEB as u8, &[0x14])?;           // Not found in the PDF
+        self.write_command(0xEB as u8, &[0x14])?;
         self.write_command(0xFE, &[])?;                     // Inter Register Enable 1 (0xFE)
         self.write_command(0xEF, &[])?;                     // Inter Register Enable 2 (0xEF)
-        self.write_command(0xEB, &[0x14])?;                 // Not found in the PDF
-        self.write_command(0x84, &[0x40])?;                 // Not found in the PDF
-        self.write_command(0x85, &[0xFF])?;                 // Not found in the PDF
-        self.write_command(0x86, &[0xFF])?;                 // Not found in the PDF
-        self.write_command(0x87, &[0xFF])?;                 // Not found in the PDF
-        self.write_command(0x88, &[0x0A])?;                 // Not found in the PDF
-        self.write_command(0x89, &[0x21])?;                 // Not found in the PDF
-        self.write_command(0x8A, &[0x00])?;                 // Not found in the PDF
-        self.write_command(0x8B, &[0x80])?;                 // Not found in the PDF
-        self.write_command(0x8C, &[0x01])?;                 // Not found in the PDF
-        self.write_command(0x8D, &[0x01])?;                 // Not found in the PDF
-        self.write_command(0x8E, &[0xFF])?;                 // Not found in the PDF
-        self.write_command(0x8F, &[0xFF])?;                 // Not found in the PDF
+        self.write_command(0xEB, &[0x14])?;
+        self.write_command(0x84, &[0x40])?;
+        self.write_command(0x85, &[0xFF])?;
+        self.write_command(0x86, &[0xFF])?;
+        self.write_command(0x87, &[0xFF])?;
+        self.write_command(0x88, &[0x0A])?;
+        self.write_command(0x89, &[0x21])?;
+        self.write_command(0x8A, &[0x00])?;
+        self.write_command(0x8B, &[0x80])?;
+        self.write_command(0x8C, &[0x01])?;
+        self.write_command(0x8D, &[0x01])?;
+        self.write_command(0x8E, &[0xFF])?;
+        self.write_command(0x8F, &[0xFF])?;
         self.write_command(0xB6, &[0x00, 0x20])?;           // Display Function Control (0xB6)
         self.write_command(0x36, &[0x98])?;                 // Memory Access Control (MADCTL)
         self.write_command(0x3A, &[0x05])?;                 // Pixel Format Set (COLMOD)
-        self.write_command(0x90, &[0x08, 0x08, 0x08, 0x08])?; // Not found in the PDF
-        self.write_command(0xBD, &[0x06])?;                 // Not found in the PDF
-        self.write_command(0xBC, &[0x00])?;                 // Not found in the PDF
-        self.write_command(0xFF, &[0x60, 0x01, 0x04])?;     // Not found in the PDF
+        self.write_command(0x90, &[0x08, 0x08, 0x08, 0x08])?;
+        self.write_command(0xBD, &[0x06])?;
+        self.write_command(0xBC, &[0x00])?;
+        self.write_command(0xFF, &[0x60, 0x01, 0x04])?;
         self.write_command(0xC3, &[0x13])?;                 // Power Control 4 (PWCTR4)
         self.write_command(0xC4, &[0x13])?;                 // Power Control 5 (PWCTR5)
-        self.write_command(0xC9, &[0x22])?;                 // Not found in the PDF
-        self.write_command(0xBE, &[0x11])?;                 // Not found in the PDF
+        self.write_command(0xC9, &[0x22])?;
+        self.write_command(0xBE, &[0x11])?;
         self.write_command(0xE1, &[0x10, 0x0E])?;           // Negative Gamma Correction (GMCTRN1)
-        self.write_command(0xDF, &[0x21, 0x0C, 0x02])?;     // Not found in the PDF
+        self.write_command(0xDF, &[0x21, 0x0C, 0x02])?;
         self.write_command(0xF0, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Positive Gamma Correction (GMCTRP1)
         self.write_command(0xF1, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?; // SET_GAMMA2 (0xF1)
-        self.write_command(0xF2, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?; // Not found in the PDF
-        self.write_command(0xF3, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?; // Not found in the PDF
-        self.write_command(0xED, &[0x1B, 0x0B])?;           // Not found in the PDF
-        self.write_command(0xAE, &[0x77])?;                 // Not found in the PDF
-        self.write_command(0xCD, &[0x63])?;                 // Not found in the PDF
-        self.write_command(0x70, &[0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03])?; // Not found in the PDF
+        self.write_command(0xF2, &[0x45, 0x09, 0x08, 0x08, 0x26, 0x2A])?;
+        self.write_command(0xF3, &[0x43, 0x70, 0x72, 0x36, 0x37, 0x6F])?;
+        self.write_command(0xED, &[0x1B, 0x0B])?;
+        self.write_command(0xAE, &[0x77])?;
+        self.write_command(0xCD, &[0x63])?;
+        self.write_command(0x70, &[0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03])?;
         self.write_command(0xE8, &[0x34])?;                 // Frame Rate Control (FRMCTR1)
-        self.write_command(0x62, &[0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70])?; // Not found in the PDF
-        self.write_command(0x63, &[0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70])?; // Not found in the PDF
-        self.write_command(0x64, &[0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07])?; // Not found in the PDF
-        self.write_command(0x66, &[0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00])?; // Not found in the PDF
-        self.write_command(0x67, &[0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98])?; // Not found in the PDF
-        self.write_command(0x74, &[0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00])?; // Not found in the PDF
-        self.write_command(0x98, &[0x3E, 0x07])?;           // Not found in the PDF
-        self.write_command(0x35, &[])?;                     // Not found in the PDF
+        self.write_command(0x62, &[0x18, 0x0D, 0x71, 0xED, 0x70, 0x70, 0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70])?;
+        self.write_command(0x63, &[0x18, 0x11, 0x71, 0xF1, 0x70, 0x70, 0x18, 0x13, 0x71, 0xF3, 0x70, 0x70])?;
+        self.write_command(0x64, &[0x28, 0x29, 0xF1, 0x01, 0xF1, 0x00, 0x07])?;
+        self.write_command(0x66, &[0x3C, 0x00, 0xCD, 0x67, 0x45, 0x45, 0x10, 0x00, 0x00, 0x00])?;
+        self.write_command(0x67, &[0x00, 0x3C, 0x00, 0x00, 0x00, 0x01, 0x54, 0x10, 0x32, 0x98])?;
+        self.write_command(0x74, &[0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00])?;
+        self.write_command(0x98, &[0x3E, 0x07])?;
+        self.write_command(0x35, &[])?;
         self.write_command(0x21, &[])?;                     // Display Inversion ON (INVON)
         self.write_command(0x11, &[])?;                     // Sleep Out Mode (SLPOUT)
         self.write_command(0x29, &[])?;                     // Display ON (DISPON)
@@ -597,5 +599,46 @@ where
         }
 
         Ok(())
+    }
+}
+
+// Implementing the DrawTarget trait for the GC9A01A display driver
+impl<SPI, DC, CS, RST> DrawTarget for GC9A01A<SPI, DC, CS, RST>
+where
+    SPI: Write<u8>,
+    DC: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
+{
+    type Color = Rgb565;
+    type Error = core::convert::Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        for Pixel(coord, color) in pixels {
+            if coord.x >= 0 && coord.x < self.width as i32 && coord.y >= 0 && coord.y < self.height as i32 {
+                let color_value = color.into_storage();
+                self.set_address_window(coord.x as u16, coord.y as u16, coord.x as u16, coord.y as u16).map_err(|_| core::convert::Infallible)?;
+                self.write_command(Instruction::RAMWR as u8, &[]).map_err(|_| core::convert::Infallible)?;
+                self.start_data().map_err(|_| core::convert::Infallible)?;
+                self.write_word(color_value).map_err(|_| core::convert::Infallible)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+// Implementing the OriginDimensions trait for the GC9A01A display driver
+impl<SPI, DC, CS, RST> OriginDimensions for GC9A01A<SPI, DC, CS, RST>
+where
+    SPI: Write<u8>,
+    DC: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
+{
+    fn size(&self) -> Size {
+        Size::new(self.width, self.height)
     }
 }
