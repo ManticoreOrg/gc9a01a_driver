@@ -20,6 +20,10 @@ impl<'a> FrameBuffer<'a> {
         self.buffer
     }
 
+    pub fn get_mut_buffer(&mut self) -> &mut [u8] {
+        &mut self.buffer
+    }
+
     pub fn clear(&mut self, color: Rgb565) {
         let raw_color = color.into_storage();
         for chunk in self.buffer.chunks_exact_mut(2) {
