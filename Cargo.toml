@@ -3,7 +3,7 @@ name = "gc9a01a_driver"
 version = "0.2.1"
 edition = "2021"
 authors = ["GordonCox"]
-description = "Display Driver to Support for GC9A01A LCD 1.28 inch"
+description = "Display Driver to Support for GC9A01A LCD 1.28 inch with embedded-graphics support"
 license = "MIT"
 repository = "https://github.com/GordonCox/gc9a01a_driver.git"
 
