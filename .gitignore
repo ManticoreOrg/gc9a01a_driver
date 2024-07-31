@@ -2,3 +2,4 @@
 /examples/watch/target
 examples/watch/Cargo.lock
 Cargo.lock
+/examples/image_to_rgb565/target
