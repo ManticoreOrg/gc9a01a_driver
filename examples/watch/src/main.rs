@@ -22,8 +22,6 @@ use waveshare_rp2040_lcd_1_28::{
     Pins, XOSC_CRYSTAL_FREQ,
 };
 
-use embedded_hal::digital::v2::OutputPin;
-
 use embedded_graphics::{
     image::{Image, ImageRaw},
     mono_font::MonoTextStyleBuilder,
