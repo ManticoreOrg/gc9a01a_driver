@@ -551,6 +551,7 @@ where
     }
 }
 
+/// A structure representing a frame buffer.
 pub struct FrameBuffer<'a> {
     buffer: &'a mut [u8],
     width: u32,
@@ -558,6 +559,13 @@ pub struct FrameBuffer<'a> {
 }
 
 impl<'a> FrameBuffer<'a> {
+    /// Creates a new frame buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - A mutable slice representing the pixel data.
+    /// * `width` - The width of the frame buffer.
+    /// * `height` - The height of the frame buffer.
     pub fn new(buffer: &'a mut [u8], width: u32, height: u32) -> Self {
         Self {
             buffer,
@@ -566,10 +574,20 @@ impl<'a> FrameBuffer<'a> {
         }
     }
 
+    /// Returns a reference to the buffer.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the buffer.
     pub fn get_buffer(&self) -> &[u8] {
         self.buffer
     }
 
+    /// Clears the frame buffer with the specified color.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - The color to clear the buffer with.
     pub fn clear(&mut self, color: Rgb565) {
         let raw_color = color.into_storage();
         for chunk in self.buffer.chunks_exact_mut(2) {
@@ -578,6 +596,14 @@ impl<'a> FrameBuffer<'a> {
         }
     }
 
+    /// Copies a region from another buffer into this buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `src_buffer` - The source buffer.
+    /// * `src_top_left` - The top-left coordinate of the source region.
+    /// * `src_size` - The size of the source region.
+    /// * `dest_top_left` - The top-left coordinate of the destination region.
     pub fn copy_region(
         &mut self,
         src_buffer: &[u8],
