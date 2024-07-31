@@ -1,19 +1,15 @@
-//! Example of graphics on the LCD of the Waveshare RP2040-LCD-1.28
-//!
-//! Draws a red and green line with a blue rectangle.
-//! After that, it fills the screen line for line, at the end it starts over with
-//! another color, RED, GREEN, and BLUE.
 #![no_std]
 #![no_main]
 
-mod waveshare_rp2040_lcd_1_28;
 mod frame_buffer;
+mod waveshare_rp2040_lcd_1_28;
 
-use gc9a01a_driver::{Orientation, GC9A01A};
 use cortex_m::delay::Delay;
 use fugit::RateExtU32;
-use panic_halt as _;
+use gc9a01a_driver::{Orientation, GC9A01A};
+use panic_halt as _; // for using write! macro
 
+use rp2040_hal::timer::Timer;
 use waveshare_rp2040_lcd_1_28::entry;
 use waveshare_rp2040_lcd_1_28::{
     hal::{
@@ -30,11 +26,15 @@ use waveshare_rp2040_lcd_1_28::{
 use embedded_hal::digital::v2::OutputPin;
 
 use embedded_graphics::{
+    image::{Image, ImageRaw},
+    mono_font::MonoTextStyleBuilder,
     pixelcolor::Rgb565,
     prelude::*,
-    primitives::{PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, Circle, Triangle},
-    image::{ImageRaw, Image},
+    primitives::{Circle, PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, Triangle},
+    text::{Baseline, Text},
 };
+
+use profont::PROFONT_12_POINT;
 
 use libm::{cos, sin};
 
@@ -44,6 +44,8 @@ const LCD_WIDTH: u32 = 240;
 const LCD_HEIGHT: u32 = 240;
 // Define static buffers
 const BUFFER_SIZE: usize = (LCD_WIDTH * LCD_HEIGHT * 2) as usize;
+// 16 FPS  Is as fast as I can update the arrow smoothly so all frames are as fast as the slowest.
+const DESIRED_FRAME_DURATION_US: u32 = 1_000_000 / 16; 
 
 /// Main entry point for the application
 #[entry]
@@ -68,6 +70,13 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
+    // Print the system clock frequency
+    // Assuming no prescaler, timer runs at system clock frequency
+    /*
+    let sys_freq = clocks.system_clock.freq().to_Hz();
+    let timer_freq = sys_freq; 
+    */
+
     // Initialize SIO
     let sio = Sio::new(pac.SIO);
     let pins = Pins::new(
@@ -88,8 +97,12 @@ fn main() -> ! {
     let lcd_cs = pins.gp9.into_push_pull_output();
     let lcd_clk = pins.gp10.into_function::<hal::gpio::FunctionSpi>();
     let lcd_mosi = pins.gp11.into_function::<hal::gpio::FunctionSpi>();
-    let lcd_rst = pins.gp12.into_push_pull_output_in_state(hal::gpio::PinState::High);
-    let mut _lcd_bl = pins.gp25.into_push_pull_output_in_state(hal::gpio::PinState::Low);
+    let lcd_rst = pins
+        .gp12
+        .into_push_pull_output_in_state(hal::gpio::PinState::High);
+    let mut _lcd_bl = pins
+        .gp25
+        .into_push_pull_output_in_state(hal::gpio::PinState::Low);
 
     // Initialize SPI
     let spi = hal::Spi::<_, _, _, 8>::new(pac.SPI1, (lcd_mosi, lcd_clk));
@@ -103,23 +116,26 @@ fn main() -> ! {
     // Initialize the display
     let mut display = GC9A01A::new(spi, lcd_dc, lcd_cs, lcd_rst, false, LCD_WIDTH, LCD_HEIGHT);
     display.init(&mut delay).unwrap();
-    //display.set_orientation(&Orientation::Landscape).unwrap();
     display.set_orientation(&Orientation::Portrait).unwrap();
-    
+
     // Allocate the buffer in main and pass it to the FrameBuffer
     let mut background_buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-    let mut background_framebuffer = FrameBuffer::new(&mut background_buffer, LCD_WIDTH, LCD_HEIGHT);
+    let mut background_framebuffer =
+        FrameBuffer::new(&mut background_buffer, LCD_WIDTH, LCD_HEIGHT);
 
     let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
     let mut framebuffer = FrameBuffer::new(&mut buffer, LCD_WIDTH, LCD_HEIGHT);
 
     background_framebuffer.clear(Rgb565::BLACK);
     display.show(background_framebuffer.get_buffer()).unwrap();
-    
+
     // Clear the screen before turning on the backlight
     display.clear(Rgb565::BLACK).unwrap();
     _lcd_bl.set_high().unwrap();
     delay.delay_ms(1000);
+
+    // Initialize the timer
+    let timer = Timer::new(pac.TIMER, &mut pac.RESETS, &clocks);
 
     // Load image data
     let image_data = include_bytes!("rust-logo-240x240.raw");
@@ -129,7 +145,6 @@ fn main() -> ! {
 
     // Draw the image on both frame buffers
     image.draw(&mut background_framebuffer).unwrap();
-    //image.draw(&mut frame_buffer_2).unwrap();
     display.show(background_framebuffer.get_buffer()).unwrap();
     delay.delay_ms(1000);
 
@@ -141,61 +156,95 @@ fn main() -> ! {
     let mut angle: f32 = 90.0;
 
     image.draw(&mut framebuffer).unwrap();
-    // Infinite color wheel loop
-    /*
-    let mut l: i32 = 0;
-    let mut c = Rgb565::RED;
-    */
-    loop {
-        /*
-        Line::new(Point::new(0, l), Point::new((LCD_WIDTH - 1) as i32, l))
-            .into_styled(PrimitiveStyle::with_stroke(c, 1))
-            .draw(&mut display)
-            .unwrap();
-        delay.delay_ms(10);
-        l += 1;
-        if l == LCD_HEIGHT as i32 {
-            l = 0;
-            c = match c {
-                Rgb565::RED => Rgb565::GREEN,
-                Rgb565::GREEN => Rgb565::BLUE,
-                _ => Rgb565::RED,
-            }
-        }
-        */
+    // Variables to store the minimum and maximum frame rate
 
-        //let start_time = cortex_m::peripheral::SYST::get_current();
-    
-        // Copy the previous bounding box from the background buffer (frame_buffer_1) into the lcd buffer (framebuffer)
-        // This prevents the whole reload of the image_data.
-        let previous_bounding_box_buffer = &background_framebuffer.get_buffer()[(previous_bounding_box.top_left.y as usize * LCD_WIDTH as usize * 2) + (previous_bounding_box.top_left.x as usize * 2)..];
-        let destination_buffer = &mut framebuffer.get_mut_buffer()[(previous_bounding_box.top_left.y as usize * LCD_WIDTH as usize * 2) + (previous_bounding_box.top_left.x as usize * 2)..];
-    
-        for row in 0..previous_bounding_box.size.height as usize {
-            let source_row_start = row * LCD_WIDTH as usize * 2;
-            let source_row_end = source_row_start + previous_bounding_box.size.width as usize * 2;
-            destination_buffer[source_row_start..source_row_end].copy_from_slice(&previous_bounding_box_buffer[source_row_start..source_row_end]);
-        }
-    
+    // Minute Hand
+    loop {
+        let start_ticks = timer.get_counter_low();
+
+        // Copy the previous bounding box from the background buffer into the LCD buffer
+        framebuffer.copy_region(
+            background_framebuffer.get_buffer(),
+            previous_bounding_box.top_left,
+            previous_bounding_box.size,
+            previous_bounding_box.top_left,
+        );
+
         // Draw the arrow and return the new bounding box
-        bounding_box = create_arrow(&mut framebuffer, angle as i32, image_center.x, image_center.y);
+        bounding_box = create_arrow(
+            &mut framebuffer,
+            angle as i32,
+            image_center.x,
+            image_center.y,
+        );
         // Draw the center button
         create_button(&mut framebuffer, image_center.x, image_center.y);
-    
+
         // Increment the angle
-        angle += 6.0;
+        //At 16 Frames per second I need to incrment the angle by 0.375 in order for 1 loop to take 60 seconds.
+        angle += 0.375;
         if angle >= 360.0 {
             angle = 0.0;
         }
-    
+
         // The bounding box has a pixel padding of 5 pixels around the arrow to prevent the need to draw the background buffer before the next arrow is drawn.
         // This improves performance as only one draw operation occurs instead of 2.
-        display.show_region(framebuffer.get_buffer(), bounding_box.top_left.x as u16, bounding_box.top_left.y as u16, bounding_box.size.width as u16, bounding_box.size.height as u16).unwrap();
+        display
+            .show_region(
+                framebuffer.get_buffer(),
+                bounding_box.top_left.x as u16,
+                bounding_box.top_left.y as u16,
+                bounding_box.size.width as u16,
+                bounding_box.size.height as u16,
+            )
+            .unwrap();
+
         previous_bounding_box = bounding_box;
-    
-        // Delay to achieve 1 Hz
-        delay.delay_ms(1000);
+
+        // Ensure each frame takes the exact same amount of time
+        let end_ticks = timer.get_counter_low();
+        let frame_ticks = end_ticks - start_ticks;
+        if frame_ticks < DESIRED_FRAME_DURATION_US {
+            delay.delay_us(DESIRED_FRAME_DURATION_US - frame_ticks);
+        }
     }
+}
+
+fn draw_text_with_background(
+    framebuffer: &mut FrameBuffer,
+    text: &str,
+    position: Point,
+    text_color: Rgb565,
+    background_color: Rgb565,
+) -> Rectangle {
+    let character_style = MonoTextStyleBuilder::new()
+        .font(&PROFONT_12_POINT)
+        .text_color(text_color)
+        .background_color(background_color)
+        .build();
+
+    // Calculate the size of the text
+    let text_area = Rectangle::new(
+        position,
+        Size::new(
+            text.len() as u32 * PROFONT_12_POINT.character_size.width + 10,
+            PROFONT_12_POINT.character_size.height,
+        ),
+    );
+
+    // Draw the background
+    Rectangle::new(position, text_area.size)
+        .into_styled(PrimitiveStyle::with_fill(background_color))
+        .draw(framebuffer)
+        .unwrap();
+
+    // Draw the text
+    Text::with_baseline(text, position, character_style, Baseline::Top)
+        .draw(framebuffer)
+        .unwrap();
+
+    // Return the bounding box
+    text_area
 }
 
 /// Create an arrow image at a specified angle and position
@@ -239,8 +288,8 @@ fn create_arrow(
         north_left,
         south_left,
         south,
-        Point::zero(),  // unused but needed to keep array size fixed
-        Point::zero(),  // unused but needed to keep array size fixed
+        Point::zero(), // unused but needed to keep array size fixed
+        Point::zero(), // unused but needed to keep array size fixed
     ];
 
     let right_points = [
@@ -248,8 +297,8 @@ fn create_arrow(
         north_right,
         south_right,
         south,
-        Point::zero(),  // unused but needed to keep array size fixed
-        Point::zero(),  // unused but needed to keep array size fixed
+        Point::zero(), // unused but needed to keep array size fixed
+        Point::zero(), // unused but needed to keep array size fixed
     ];
 
     let red = Rgb565::new(255, 0, 0);
@@ -269,11 +318,7 @@ fn create_arrow(
 }
 
 /// Draw a polygon on the frame buffer
-fn draw_polygon(
-    framebuffer: &mut FrameBuffer,
-    points: &[Point],
-    style: PrimitiveStyle<Rgb565>,
-) {
+fn draw_polygon(framebuffer: &mut FrameBuffer, points: &[Point], style: PrimitiveStyle<Rgb565>) {
     if points.len() < 3 {
         return; // Not enough points to form a polygon
     }
@@ -281,8 +326,7 @@ fn draw_polygon(
     // Use fan triangulation from the first point
     let first_point = points[0];
     for i in 1..points.len() - 1 {
-        let triangle = Triangle::new(first_point, points[i], points[i + 1])
-            .into_styled(style);
+        let triangle = Triangle::new(first_point, points[i], points[i + 1]).into_styled(style);
         triangle.draw(framebuffer).unwrap();
     }
 }
@@ -297,9 +341,7 @@ fn get_coordinates(center: Point, radius: i32, angle: i32) -> Point {
 
 /// Draws a circle on the frame buffer.
 fn draw_circle(framebuffer: &mut FrameBuffer, color: Rgb565, center: Point, radius: i32) {
-    let style = PrimitiveStyleBuilder::new()
-        .fill_color(color)
-        .build();
+    let style = PrimitiveStyleBuilder::new().fill_color(color).build();
     // Calculate the top-left corner of the circle based on the center point and radius
     let top_left = Point::new(center.x - radius, center.y - radius);
     let diameter = (radius * 2) as u32;
@@ -313,7 +355,12 @@ fn draw_circle(framebuffer: &mut FrameBuffer, color: Rgb565, center: Point, radi
 /// Creates a button image on the frame buffer.
 fn create_button(framebuffer: &mut FrameBuffer, center_x: i32, center_y: i32) {
     let circle_radius = 14;
-    draw_circle(framebuffer, Rgb565::BLACK, Point::new(center_x, center_y), circle_radius);
+    draw_circle(
+        framebuffer,
+        Rgb565::BLACK,
+        Point::new(center_x, center_y),
+        circle_radius,
+    );
 }
 
 /// Helper function to calculate the bounding box of a set of points with an optional padding.
@@ -341,6 +388,9 @@ fn calculate_bounding_box(points: &[Point], padding: Option<u32>) -> Rectangle {
     let padding = padding.unwrap_or(0) as i32;
     Rectangle::new(
         Point::new(min_x - padding, min_y - padding),
-        Size::new((max_x - min_x + 2 * padding) as u32, (max_y - min_y + 2 * padding) as u32),
+        Size::new(
+            (max_x - min_x + 2 * padding) as u32,
+            (max_y - min_y + 2 * padding) as u32,
+        ),
     )
 }

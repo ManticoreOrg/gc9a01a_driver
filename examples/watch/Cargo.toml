@@ -17,8 +17,11 @@ embedded-hal = { version = "0.2.7" }
 libm = "0.2.8"
 fugit = { version = "0.3.7" }
 embedded-graphics = { version = "0.7.1" }
+embedded-graphics-core = { version ="0.4.0" }
+profont = { version ="0.6.1" }
 panic-halt = { version = "0.2.0" }
 cortex-m = { version = "0.7.7" }
+heapless = { version = "0.8.0" }
 
 [dev-dependencies]
 cortex-m = { version = "0.7.7" }
