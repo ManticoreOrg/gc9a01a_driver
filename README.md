@@ -1,19 +1,33 @@
 # GC9A01A Display Driver
 
-This project is a driver implementation for the GC9A01A display using Rust. The driver allows for the initialization, configuration, and control of the display, providing various functions for drawing graphics, setting pixel colors, and handling display orientation.
+A Rust library for interfacing with the GC9A01A display using the `embedded-hal` and `embedded-graphics` crates.
 
 ## Features
 
-- No standard library (`#![no_std]`)
-- Compatible with embedded systems
-- Supports SPI interface
-- Configurable RGB/BGR display mode
-- Multiple display orientations
-- Functions for drawing pixels and images
+- Hardware SPI interface
+- RGB and BGR support
+- Display orientation support
+- Drawing images and individual pixels
+- Frame buffer for efficient display updates
 
-## Usage
+## Getting Started
 
-To use this driver, include it in your Rust project as a dependency and instantiate the driver with the required SPI and GPIO pins.
+### Prerequisites
+
+- Rust toolchain
+- `embedded-hal` crate
+- `embedded-graphics` crate
+
+### Installation
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+embedded-hal = "0.2"
+embedded-graphics = "0.7"
+gc9a01a = { path = "path/to/your/gc9a01a" }
+```
 
 ### Example
 
@@ -45,48 +59,61 @@ Here's an example of how to use the driver to initialize the display:
 
 ```
 
-API Reference
--------------
+### API Documentation
 
-### Structs
+#### `Instruction` Enum
 
-#### `GC9A01A<SPI, DC, CS, RST>`
+Enumeration of instructions for the GC9A01A display.
 
-The main driver struct. Provides methods to interact with the display.
+#### `GC9A01A` Struct
 
--   `new(spi: SPI, dc: DC, cs: CS, rst: RST, rgb: bool, width: u32, height: u32) -> Self`: Creates a new driver instance.
--   `init<DELAY>(&mut self, delay: &mut DELAY) -> Result<(), ()>`: Initializes the display.
--   `hard_reset<DELAY>(&mut self, delay: &mut DELAY) -> Result<(), ()>`: Performs a hard reset of the display.
--   `write_command(&mut self, command: u8, params: &[u8]) -> Result<(), ()>`: Writes a command to the display.
--   `start_data(&mut self) -> Result<(), ()>`: Starts data transmission.
--   `write_data(&mut self, data: &[u8]) -> Result<(), ()>`: Writes data to the display.
--   `write_word(&mut self, value: u16) -> Result<(), ()>`: Writes a data word to the display.
--   `write_words_buffered(&mut self, words: impl IntoIterator<Item = u16>) -> Result<(), ()>`: Writes buffered data words to the display.
--   `set_orientation(&mut self, orientation: &Orientation) -> Result<(), ()>`: Sets the orientation of the display.
--   `set_offset(&mut self, dx: u16, dy: u16)`: Sets the global offset of the displayed image.
--   `set_address_window(&mut self, start_x: u16, start_y: u16, end_x: u16, end_y: u16) -> Result<(), ()>`: Sets the address window for the display.
+Driver for the GC9A01A display.
+
+-   `new(spi, dc, cs, rst, rgb, width, height) -> Self`: Creates a new driver instance.
+-   `init(&mut self, delay: &mut impl DelayMs<u8>) -> Result<(), ()>`: Initializes the display.
+-   `set_orientation(&mut self, orientation: &Orientation) -> Result<(), ()>`: Sets the display orientation.
 -   `write_pixel(&mut self, x: u16, y: u16, color: u16) -> Result<(), ()>`: Sets a pixel color at the given coordinates.
--   `write_pixels_continuous<P: IntoIterator<Item = u16>>(&mut self, colors: P) -> Result<(), ()>`: Writes pixel colors sequentially into the current drawing window.
--   `write_pixels_buffered<P: IntoIterator<Item = u16>>(&mut self, colors: P) -> Result<(), ()>`: Writes buffered pixel colors sequentially into the current drawing window.
--   `set_window_and_write_pixels<P: IntoIterator<Item = u16>>(&mut self, start_x: u16, start_y: u16, end_x: u16, end_y: u16, colors: P) -> Result<(), ()>`: Sets pixel colors at the given drawing window.
--   `set_window_and_write_pixels_buffered<P: IntoIterator<Item = u16>>(&mut self, start_x: u16, start_y: u16, end_x: u16, end_y: u16, colors: P) -> Result<(), ()>`: Sets buffered pixel colors at the given drawing window.
 -   `draw_image(&mut self, image_data: &[u8]) -> Result<(), ()>`: Draws an image from a slice of RGB565 data.
 -   `show(&mut self, buffer: &[u8]) -> Result<(), ()>`: Displays the provided buffer on the screen.
 -   `show_region(&mut self, buffer: &[u8], top_left_x: u16, top_left_y: u16, width: u16, height: u16) -> Result<(), ()>`: Updates only the specified region of the display with the provided buffer.
 
-### Enums
+#### `Orientation` Enum
 
-#### `Instruction`
+Display orientation options.
 
-Enumeration of instructions for the GC9A01A display.
+-   `Portrait`
+-   `Landscape`
+-   `PortraitSwapped`
+-   `LandscapeSwapped`
 
--   Variants: `Nop`, `SwReset`, `RddId`, `RddSt`, `SlpIn`, `SlpOut`, `PtlOn`, `NorOn`, `InvOff`, `InvOn`, `DispOff`, `DispOn`, `CaSet`, `RaSet`, `RamWr`, `RamRd`, `PtlAr`, `ColMod`, `MadCtl`, `FrmCtr1`, `FrmCtr2`, `FrmCtr3`, `InvCtr`, `DisSet5`, `PwCtr1`, `PwCtr2`, `PwCtr3`, `PwCtr4`, `PwCtr5`, `VmCtr1`, `RdId1`, `RdId2`, `RdId3`, `RdId4`, `PwCtr6`, `GmcTrp1`, `GmcTrn1`.
+#### `FrameBuffer` Struct
 
-#### `Orientation`
+A structure representing a frame buffer.
 
-Enumeration of display orientations.
+-   `new(buffer: &mut [u8], width: u32, height: u32) -> Self`: Creates a new frame buffer.
+-   `get_buffer(&self) -> &[u8]`: Returns a reference to the buffer.
+-   `clear(&mut self, color: Rgb565)`: Clears the frame buffer with the specified color.
+-   `copy_region(&mut self, src_buffer: &[u8], src_top_left: Point, src_size: Size, dest_top_left: Point)`: Copies a region from another buffer into this buffer.
 
--   Variants: `Portrait`, `Landscape`, `PortraitSwapped`, `LandscapeSwapped`.
+Contributing
+------------
+
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature-branch`).
+3.  Commit your changes (`git commit -am 'Add new feature'`).
+4.  Push to the branch (`git push origin feature-branch`).
+5.  Create a new Pull Request.
+
+License
+-------
+
+This project is licensed under the MIT License.
+
+Acknowledgments
+---------------
+
+-   [embedded-hal](https://github.com/rust-embedded/embedded-hal)
+-   [embedded-graphics](https://github.com/embedded-graphics/embedded-graphics)
 
 License
 -------
