@@ -5,7 +5,7 @@ mod waveshare_rp2040_lcd_1_28;
 
 use cortex_m::delay::Delay;
 use fugit::RateExtU32;
-use gc9a01a_driver::{Orientation, GC9A01A,FrameBuffer};
+use gc9a01a_driver::{FrameBuffer, Orientation, GC9A01A};
 use panic_halt as _; // for using write! macro
 
 use rp2040_hal::timer::Timer;
@@ -37,14 +37,12 @@ use profont::PROFONT_12_POINT;
 
 use libm::{cos, sin};
 
-use frame_buffer::FrameBuffer;
-
 const LCD_WIDTH: u32 = 240;
 const LCD_HEIGHT: u32 = 240;
 // Define static buffers
 const BUFFER_SIZE: usize = (LCD_WIDTH * LCD_HEIGHT * 2) as usize;
 // 16 FPS  Is as fast as I can update the arrow smoothly so all frames are as fast as the slowest.
-const DESIRED_FRAME_DURATION_US: u32 = 1_000_000 / 16; 
+const DESIRED_FRAME_DURATION_US: u32 = 1_000_000 / 16;
 
 /// Main entry point for the application
 #[entry]
@@ -73,7 +71,7 @@ fn main() -> ! {
     // Assuming no prescaler, timer runs at system clock frequency
     /*
     let sys_freq = clocks.system_clock.freq().to_Hz();
-    let timer_freq = sys_freq; 
+    let timer_freq = sys_freq;
     */
 
     // Initialize SIO
