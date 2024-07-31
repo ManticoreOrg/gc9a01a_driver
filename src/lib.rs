@@ -373,6 +373,53 @@ where
         self.write_word(end_y + self.dy)
     }
 
+    /// Clears the screen by filling it with a single color.
+    ///
+    /// This function sets the entire display to the specified color by writing data
+    /// in chunks, which balances memory efficiency and performance.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - The color to fill the screen with, in RGB565 format.
+    ///
+    /// # Returns
+    ///
+    /// `Result<(), ()>` indicating success or failure.
+    pub fn clear_screen(&mut self, color: u16) -> Result<(), ()> {
+        let color_high = (color >> 8) as u8;
+        let color_low = (color & 0xff) as u8;
+
+        // Set the address window to cover the entire screen
+        self.set_address_window(0, 0, self.width as u16 - 1, self.height as u16 - 1)?;
+        self.write_command(Instruction::RamWr as u8, &[])?;
+        self.start_data()?;
+
+        // Define a constant for the chunk size
+        const CHUNK_SIZE: usize = 512;
+        let mut chunk = [0u8; CHUNK_SIZE * 2];
+
+        // Fill the chunk with the color data
+        for i in 0..CHUNK_SIZE {
+            chunk[i * 2] = color_high;
+            chunk[i * 2 + 1] = color_low;
+        }
+
+        // Write data in chunks
+        let total_pixels = (self.width * self.height) as usize;
+        let full_chunks = total_pixels / CHUNK_SIZE;
+        let remaining_pixels = total_pixels % CHUNK_SIZE;
+
+        for _ in 0..full_chunks {
+            self.write_data(&chunk)?;
+        }
+
+        if remaining_pixels > 0 {
+            self.write_data(&chunk[0..(remaining_pixels * 2)])?;
+        }
+
+        Ok(())
+    }
+
     /// Sets a pixel color at the given coordinates.
     ///
     /// This function sets the color of a single pixel at the specified coordinates.
