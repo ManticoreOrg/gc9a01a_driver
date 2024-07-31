@@ -122,13 +122,10 @@ fn main() -> ! {
 
     let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
     let mut framebuffer = FrameBuffer::new(&mut buffer, LCD_WIDTH, LCD_HEIGHT);
-
     background_framebuffer.clear(Rgb565::BLACK);
-    display.clear_screen(Rgb565::BLACK.into_storage()).unwrap();
-     _lcd_bl.into_push_pull_output_in_state(hal::gpio::PinState::High);
 
-    //_lcd_bl.into_push_pull_output_in_state(hal::gpio::PinState::High);
-    //delay.delay_ms(1000);
+    display.clear_screen(Rgb565::BLACK.into_storage()).unwrap();
+    _lcd_bl.into_push_pull_output_in_state(hal::gpio::PinState::High);
 
     // Initialize the timer
     let timer = Timer::new(pac.TIMER, &mut pac.RESETS, &clocks);
