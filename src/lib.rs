@@ -311,33 +311,6 @@ where
         self.write_data(&value.to_be_bytes())
     }
 
-    /// Writes buffered data words to the display.
-    ///
-    /// This function writes an iterator of 16-bit words to the display in buffered mode.
-    ///
-    /// # Arguments
-    ///
-    /// * `words` - Data words to write.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), ()>` indicating success or failure.
-    fn write_words_buffered(&mut self, words: impl IntoIterator<Item = u16>) -> Result<(), ()> {
-        let mut buffer = [0; 32];
-        let mut index = 0;
-        for word in words {
-            let as_bytes = word.to_be_bytes();
-            buffer[index] = as_bytes[0];
-            buffer[index + 1] = as_bytes[1];
-            index += 2;
-            if index >= buffer.len() {
-                self.write_data(&buffer)?;
-                index = 0;
-            }
-        }
-        self.write_data(&buffer[0..index])
-    }
-
     /// Sets the orientation of the display.
     ///
     /// This function sets the display orientation to one of the predefined modes.
@@ -418,103 +391,6 @@ where
         self.write_command(Instruction::RamWr as u8, &[])?;
         self.start_data()?;
         self.write_word(color)
-    }
-
-    /// Writes pixel colors sequentially into the current drawing window.
-    ///
-    /// This function writes a sequence of pixel colors into the current drawing window.
-    ///
-    /// # Arguments
-    ///
-    /// * `colors` - Pixel colors to write.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), ()>` indicating success or failure.
-    pub fn write_pixels_continuous<P: IntoIterator<Item = u16>>(
-        &mut self,
-        colors: P,
-    ) -> Result<(), ()> {
-        self.write_command(Instruction::RamWr as u8, &[])?;
-        self.start_data()?;
-        for color in colors {
-            self.write_word(color)?;
-        }
-        Ok(())
-    }
-
-    /// Writes buffered pixel colors sequentially into the current drawing window.
-    ///
-    /// This function writes a sequence of pixel colors into the current drawing window in buffered mode.
-    ///
-    /// # Arguments
-    ///
-    /// * `colors` - Pixel colors to write.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), ()>` indicating success or failure.
-    pub fn write_pixels_buffered<P: IntoIterator<Item = u16>>(
-        &mut self,
-        colors: P,
-    ) -> Result<(), ()> {
-        self.write_command(Instruction::RamWr as u8, &[])?;
-        self.start_data()?;
-        self.write_words_buffered(colors)
-    }
-
-    /// Sets pixel colors at the given drawing window.
-    ///
-    /// This function sets the colors of pixels in a specified rectangular region.
-    ///
-    /// # Arguments
-    ///
-    /// * `start_x` - Start x-coordinate.
-    /// * `start_y` - Start y-coordinate.
-    /// * `end_x` - End x-coordinate.
-    /// * `end_y` - End y-coordinate.
-    /// * `colors` - Pixel colors to write.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), ()>` indicating success or failure.
-    pub fn set_window_and_write_pixels<P: IntoIterator<Item = u16>>(
-        &mut self,
-        start_x: u16,
-        start_y: u16,
-        end_x: u16,
-        end_y: u16,
-        colors: P,
-    ) -> Result<(), ()> {
-        self.set_address_window(start_x, start_y, end_x, end_y)?;
-        self.write_pixels_continuous(colors)
-    }
-
-    /// Sets buffered pixel colors at the given drawing window.
-    ///
-    /// This function sets the colors of pixels in a specified rectangular region in buffered mode.
-    ///
-    /// # Arguments
-    ///
-    /// * `start_x` - Start x-coordinate.
-    /// * `start_y` - Start y-coordinate.
-    /// * `end_x` - End x-coordinate.
-    /// * `end_y` - End y-coordinate.
-    /// * `colors` - Pixel colors to write.
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), ()>` indicating success or failure.
-    pub fn set_window_and_write_pixels_buffered<P: IntoIterator<Item = u16>>(
-        &mut self,
-        start_x: u16,
-        start_y: u16,
-        end_x: u16,
-        end_y: u16,
-        colors: P,
-    ) -> Result<(), ()> {
-        self.set_address_window(start_x, start_y, end_x, end_y)?;
-        self.write_pixels_buffered(colors)
     }
 
     /// Draws an image from a slice of RGB565 data.
@@ -670,6 +546,85 @@ where
     CS: OutputPin,
     RST: OutputPin,
 {
+    fn size(&self) -> Size {
+        Size::new(self.width, self.height)
+    }
+}
+
+pub struct FrameBuffer<'a> {
+    buffer: &'a mut [u8],
+    width: u32,
+    height: u32,
+}
+
+impl<'a> FrameBuffer<'a> {
+    pub fn new(buffer: &'a mut [u8], width: u32, height: u32) -> Self {
+        Self {
+            buffer,
+            width,
+            height,
+        }
+    }
+
+    pub fn get_buffer(&self) -> &[u8] {
+        self.buffer
+    }
+
+    pub fn clear(&mut self, color: Rgb565) {
+        let raw_color = color.into_storage();
+        for chunk in self.buffer.chunks_exact_mut(2) {
+            chunk[0] = (raw_color >> 8) as u8;
+            chunk[1] = raw_color as u8;
+        }
+    }
+
+    pub fn copy_region(
+        &mut self,
+        src_buffer: &[u8],
+        src_top_left: Point,
+        src_size: Size,
+        dest_top_left: Point,
+    ) {
+        for row in 0..src_size.height as usize {
+            let src_row_start = (src_top_left.y as usize + row) * self.width as usize * 2
+                + src_top_left.x as usize * 2;
+            let src_row_end = src_row_start + src_size.width as usize * 2;
+
+            let dest_row_start = (dest_top_left.y as usize + row) * self.width as usize * 2
+                + dest_top_left.x as usize * 2;
+            let dest_row_end = dest_row_start + src_size.width as usize * 2;
+
+            self.buffer[dest_row_start..dest_row_end]
+                .copy_from_slice(&src_buffer[src_row_start..src_row_end]);
+        }
+    }
+}
+
+impl<'a> DrawTarget for FrameBuffer<'a> {
+    type Color = Rgb565;
+    type Error = ();
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        for Pixel(coord, color) in pixels {
+            if coord.x >= 0
+                && coord.x < self.width as i32
+                && coord.y >= 0
+                && coord.y < self.height as i32
+            {
+                let index = ((coord.y as u32 * self.width + coord.x as u32) * 2) as usize;
+                let raw_color = color.into_storage();
+                self.buffer[index] = (raw_color >> 8) as u8;
+                self.buffer[index + 1] = raw_color as u8;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<'a> OriginDimensions for FrameBuffer<'a> {
     fn size(&self) -> Size {
         Size::new(self.width, self.height)
     }

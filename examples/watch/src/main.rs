@@ -1,12 +1,11 @@
 #![no_std]
 #![no_main]
 
-mod frame_buffer;
 mod waveshare_rp2040_lcd_1_28;
 
 use cortex_m::delay::Delay;
 use fugit::RateExtU32;
-use gc9a01a_driver::{Orientation, GC9A01A};
+use gc9a01a_driver::{Orientation, GC9A01A,FrameBuffer};
 use panic_halt as _; // for using write! macro
 
 use rp2040_hal::timer::Timer;
