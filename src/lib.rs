@@ -50,10 +50,10 @@ pub enum Instruction {
 /// Structure to represent a region.
 #[derive(Copy, Clone, Default)]
 pub struct Region {
-    x: u16,
-    y: u16,
-    width: u16,
-    height: u16,
+    pub x: u16,
+    pub y: u16,
+    pub width: u32,
+    pub height: u32,
 }
 
 /// Driver for the GC9A01A display.
@@ -530,13 +530,13 @@ where
         buffer: &[u8],
         top_left_x: u16,
         top_left_y: u16,
-        width: u16,
-        height: u16,
+        width: u32,
+        height: u32,
     ) -> Result<(), ()> {
         let start_x = top_left_x as u16; // Start x-coordinate
         let start_y = top_left_y as u16; // Start y-coordinate
-        let end_x = (top_left_x + width - 1) as u16; // End x-coordinate
-        let end_y = (top_left_y + height - 1) as u16; // End y-coordinate
+        let end_x = (top_left_x as u32 + width - 1) as u16; // End x-coordinate
+        let end_y = (top_left_y as u32 + height - 1) as u16; // End y-coordinate
 
         // Calculate the buffer offset for the region
         let buffer_width = self.width as usize; // Width of the buffer
@@ -579,8 +579,8 @@ where
         &mut self,
         x: u16,
         y: u16,
-        width: u16,
-        height: u16,
+        width: u32,
+        height: u32,
     ) -> Result<(), ()> {
         let region = Region { x, y, width, height };
     
@@ -729,8 +729,8 @@ impl<'a> FrameBuffer<'a> {
         src_buffer: &[u8],
         src_x: u16,
         src_y: u16,
-        src_width: u16,
-        src_height: u16,
+        src_width: u32,
+        src_height: u32,
         dest_x: u16,
         dest_y: u16,
     ) {
@@ -754,7 +754,7 @@ impl<'a> FrameBuffer<'a> {
     ///
     /// * `src_buffer` - The source buffer.
     /// * `regions` - An array of regions to restore.
-    pub fn restore_regions(&mut self, src_buffer: &[u8], regions: &[Option<Region>]) {
+    pub fn copy_regions(&mut self, src_buffer: &[u8], regions: &[Option<Region>]) {
         for region in regions.iter().flatten() {
             self.copy_region(
                 src_buffer,
@@ -764,8 +764,6 @@ impl<'a> FrameBuffer<'a> {
             );
         }
     }
-
-
 }
 
 impl<'a> DrawTarget for FrameBuffer<'a> {

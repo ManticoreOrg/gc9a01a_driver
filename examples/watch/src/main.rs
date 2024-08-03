@@ -5,7 +5,7 @@ mod waveshare_rp2040_lcd_1_28;
 
 use cortex_m::delay::Delay;
 use fugit::RateExtU32;
-use gc9a01a_driver::{FrameBuffer, Orientation, GC9A01A};
+use gc9a01a_driver::{FrameBuffer, Orientation, GC9A01A, Region};
 use panic_halt as _; // for using write! macro
 
 use rp2040_hal::timer::Timer;
@@ -141,8 +141,11 @@ fn main() -> ! {
 
     // Calculate the center of the image
     let image_center = Point::new(240 / 2, 240 / 2);
-    let mut bounding_box: Rectangle;
-    let mut previous_bounding_box = Rectangle::new(Point::new(0, 0), Size::new(0, 0));
+    //let mut bounding_box: Rectangle;
+    //let mut previous_bounding_box = Rectangle::new(Point::new(0, 0), Size::new(0, 0));
+
+    //let mut bounding_region: Region;
+    //let mut previous_bounding_region = Region::new(0,0,0,0);
     // Define a rectangle at (0, 0) with width 0 and height 0
     let mut angle: f32 = 90.0;
 
@@ -155,12 +158,12 @@ fn main() -> ! {
 
 
         //let regions = display.get_regions();
-        framebuffer.restore_regions(background_framebuffer.get_buffer(), display.get_regions());
+        framebuffer.copy_regions(background_framebuffer.get_buffer(), display.get_regions());
         // Copy the previous bounding box from the background buffer into the LCD buffer
         display.clear_regions();
 
         // Draw the arrow and return the new bounding box
-        bounding_box = create_arrow(
+        let bounding_region = create_arrow(
             &mut framebuffer,
             angle as i32,
             image_center.x,
@@ -178,15 +181,10 @@ fn main() -> ! {
 
         // The bounding box has a pixel padding of 5 pixels around the arrow to prevent the need to draw the background buffer before the next arrow is drawn.
         // This improves performance as only one draw operation occurs instead of 2.
-        display.store_region_from_params(
-            bounding_box.top_left.x as u16, 
-            bounding_box.top_left.y as u16,
-            bounding_box.size.width as u16, 
-            bounding_box.size.height as u16
-        ).unwrap();
+        display.store_region(bounding_region).unwrap();
         display.show_regions(framebuffer.get_buffer()).unwrap();
 
-        previous_bounding_box = bounding_box;
+        //previous_bounding_region = bounding_region;
 
         // Ensure each frame takes the exact same amount of time
         let end_ticks = timer.get_counter_low();
@@ -240,7 +238,7 @@ fn create_arrow(
     angle: i32,
     compass_center_x: i32,
     compass_center_y: i32,
-) -> Rectangle {
+) -> Region {
     let compass_center = Point::new(compass_center_x, compass_center_y);
     let north_angle = angle - 180;
     let south_angle = angle;
@@ -299,7 +297,7 @@ fn create_arrow(
     draw_polygon(framebuffer, &right_points[0..4], style_red_9);
 
     // Calculate the bounding box of the arrow
-    let bounding_box = calculate_bounding_box(&merged_points, Some(10));
+    let bounding_box = calculate_bounding_box(&merged_points, 10);
 
     bounding_box
 }
@@ -351,11 +349,11 @@ fn create_button(framebuffer: &mut FrameBuffer, center_x: i32, center_y: i32) {
 }
 
 /// Helper function to calculate the bounding box of a set of points with an optional padding.
-fn calculate_bounding_box(points: &[Point], padding: Option<u32>) -> Rectangle {
-    let mut min_x = points[0].x;
-    let mut max_x = points[0].x;
-    let mut min_y = points[0].y;
-    let mut max_y = points[0].y;
+fn calculate_bounding_box(points: &[Point], padding: u16) -> Region {
+    let mut min_x = points[0].x as i32;
+    let mut max_x = points[0].x as i32;
+    let mut min_y = points[0].y as i32;
+    let mut max_y = points[0].y as i32;
 
     for point in points.iter().skip(1) {
         if point.x < min_x {
@@ -372,12 +370,11 @@ fn calculate_bounding_box(points: &[Point], padding: Option<u32>) -> Rectangle {
         }
     }
 
-    let padding = padding.unwrap_or(0) as i32;
-    Rectangle::new(
-        Point::new(min_x - padding, min_y - padding),
-        Size::new(
-            (max_x - min_x + 2 * padding) as u32,
-            (max_y - min_y + 2 * padding) as u32,
-        ),
-    )
+    let padding = padding as i32;
+    Region {
+        x: (min_x - padding) as u16,
+        y: (min_y - padding) as u16,
+        width: (max_x - min_x + 2 * padding) as u32,
+        height: (max_y - min_y + 2 * padding) as u32,
+    }
 }
