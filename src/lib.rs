@@ -48,7 +48,7 @@ pub enum Instruction {
 }
 
 /// Structure to represent a region.
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
 pub struct Region {
     pub x: u16,
     pub y: u16,
