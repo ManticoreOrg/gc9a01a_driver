@@ -47,6 +47,15 @@ pub enum Instruction {
     GmcTrn1 = 0xE1, // Negative Gamma Correction
 }
 
+/// Structure to represent a region.
+#[derive(Copy, Clone, Default)]
+pub struct Region {
+    x: u16,
+    y: u16,
+    width: u16,
+    height: u16,
+}
+
 /// Driver for the GC9A01A display.
 pub struct GC9A01A<SPI, DC, CS, RST>
 where
@@ -75,6 +84,7 @@ where
     dy: u16,
     width: u32,
     height: u32,
+    regions: [Option<Region>; 10],
 }
 
 /// Display orientation.
@@ -115,6 +125,7 @@ where
             dy: 0,
             width,
             height,
+            regions: [None; 10],
         }
     }
 
@@ -553,6 +564,65 @@ where
 
         Ok(())
     }
+
+    pub fn store_region(&mut self, region: Region) -> Result<(), ()> {
+        for i in 0..self.regions.len() {
+            if self.regions[i].is_none() {
+                self.regions[i] = Some(region);
+                return Ok(());
+            }
+        }
+        Err(())
+    }
+
+    pub fn store_region_from_params(
+        &mut self,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+    ) -> Result<(), ()> {
+        let region = Region { x, y, width, height };
+    
+        self.store_region(region)
+    }
+
+    pub fn get_regions(&self) -> &[Option<Region>] {
+        &self.regions
+    }
+
+    pub fn clear_regions(&mut self) {
+        self.regions = [None; 10];
+    }
+
+    pub fn show_regions(&mut self, buffer: &[u8]) -> Result<(), ()> {
+
+        for i in 0..self.regions.len() {
+            if self.regions[i].is_some() {
+                if let Some(region_data) = self.regions[i] {
+                    self.show_region(
+                        buffer,
+                        region_data.x,
+                        region_data.y,
+                        region_data.width,
+                        region_data.height,
+                    )?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+        // Additional function with default parameter
+        pub fn show_regions_and_clear(&mut self, buffer: &[u8]) -> Result<(), ()> {
+            if let Err(e) = self.show_regions(buffer) {
+                // Handle the error, e.g., log it or return a different error
+                return Err(e);
+            }
+            self.clear_regions();
+            Ok(())
+        }
 }
 
 // Implementing the DrawTarget trait for the GC9A01A display driver
@@ -648,29 +718,54 @@ impl<'a> FrameBuffer<'a> {
     /// # Arguments
     ///
     /// * `src_buffer` - The source buffer.
-    /// * `src_top_left` - The top-left coordinate of the source region.
-    /// * `src_size` - The size of the source region.
-    /// * `dest_top_left` - The top-left coordinate of the destination region.
+    /// * `src_x` - The x-coordinate of the top-left corner of the source region.
+    /// * `src_y` - The y-coordinate of the top-left corner of the source region.
+    /// * `src_width` - The width of the source region.
+    /// * `src_height` - The height of the source region.
+    /// * `dest_x` - The x-coordinate of the top-left corner of the destination region.
+    /// * `dest_y` - The y-coordinate of the top-left corner of the destination region.
     pub fn copy_region(
         &mut self,
         src_buffer: &[u8],
-        src_top_left: Point,
-        src_size: Size,
-        dest_top_left: Point,
+        src_x: u16,
+        src_y: u16,
+        src_width: u16,
+        src_height: u16,
+        dest_x: u16,
+        dest_y: u16,
     ) {
-        for row in 0..src_size.height as usize {
-            let src_row_start = (src_top_left.y as usize + row) * self.width as usize * 2
-                + src_top_left.x as usize * 2;
-            let src_row_end = src_row_start + src_size.width as usize * 2;
+        for row in 0..src_height as usize {
+            let src_row_start = (src_y as usize + row) * self.width as usize * 2
+                + src_x as usize * 2;
+            let src_row_end = src_row_start + src_width as usize * 2;
 
-            let dest_row_start = (dest_top_left.y as usize + row) * self.width as usize * 2
-                + dest_top_left.x as usize * 2;
-            let dest_row_end = dest_row_start + src_size.width as usize * 2;
+            let dest_row_start = (dest_y as usize + row) * self.width as usize * 2
+                + dest_x as usize * 2;
+            let dest_row_end = dest_row_start + src_width as usize * 2;
 
             self.buffer[dest_row_start..dest_row_end]
                 .copy_from_slice(&src_buffer[src_row_start..src_row_end]);
         }
     }
+
+    /// Restores regions from a source buffer into the frame buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `src_buffer` - The source buffer.
+    /// * `regions` - An array of regions to restore.
+    pub fn restore_regions(&mut self, src_buffer: &[u8], regions: &[Option<Region>]) {
+        for region in regions.iter().flatten() {
+            self.copy_region(
+                src_buffer,
+                region.x, region.y,
+                region.width, region.height,
+                region.x, region.y
+            );
+        }
+    }
+
+
 }
 
 impl<'a> DrawTarget for FrameBuffer<'a> {
