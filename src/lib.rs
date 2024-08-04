@@ -582,8 +582,13 @@ where
         width: u32,
         height: u32,
     ) -> Result<(), ()> {
-        let region = Region { x, y, width, height };
-    
+        let region = Region {
+            x,
+            y,
+            width,
+            height,
+        };
+
         self.store_region(region)
     }
 
@@ -596,7 +601,6 @@ where
     }
 
     pub fn show_regions(&mut self, buffer: &[u8]) -> Result<(), ()> {
-
         for i in 0..self.regions.len() {
             if self.regions[i].is_some() {
                 if let Some(region_data) = self.regions[i] {
@@ -614,15 +618,15 @@ where
         Ok(())
     }
 
-        // Additional function with default parameter
-        pub fn show_regions_and_clear(&mut self, buffer: &[u8]) -> Result<(), ()> {
-            if let Err(e) = self.show_regions(buffer) {
-                // Handle the error, e.g., log it or return a different error
-                return Err(e);
-            }
-            self.clear_regions();
-            Ok(())
+    // Additional function with default parameter
+    pub fn show_regions_and_clear(&mut self, buffer: &[u8]) -> Result<(), ()> {
+        if let Err(e) = self.show_regions(buffer) {
+            // Handle the error, e.g., log it or return a different error
+            return Err(e);
         }
+        self.clear_regions();
+        Ok(())
+    }
 }
 
 // Implementing the DrawTarget trait for the GC9A01A display driver
@@ -735,12 +739,12 @@ impl<'a> FrameBuffer<'a> {
         dest_y: u16,
     ) {
         for row in 0..src_height as usize {
-            let src_row_start = (src_y as usize + row) * self.width as usize * 2
-                + src_x as usize * 2;
+            let src_row_start =
+                (src_y as usize + row) * self.width as usize * 2 + src_x as usize * 2;
             let src_row_end = src_row_start + src_width as usize * 2;
 
-            let dest_row_start = (dest_y as usize + row) * self.width as usize * 2
-                + dest_x as usize * 2;
+            let dest_row_start =
+                (dest_y as usize + row) * self.width as usize * 2 + dest_x as usize * 2;
             let dest_row_end = dest_row_start + src_width as usize * 2;
 
             self.buffer[dest_row_start..dest_row_end]
@@ -758,9 +762,12 @@ impl<'a> FrameBuffer<'a> {
         for region in regions.iter().flatten() {
             self.copy_region(
                 src_buffer,
-                region.x, region.y,
-                region.width, region.height,
-                region.x, region.y
+                region.x,
+                region.y,
+                region.width,
+                region.height,
+                region.x,
+                region.y,
             );
         }
     }
