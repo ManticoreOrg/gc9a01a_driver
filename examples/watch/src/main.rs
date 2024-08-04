@@ -156,12 +156,6 @@ fn main() -> ! {
     loop {
         let start_ticks = timer.get_counter_low();
 
-
-        //let regions = display.get_regions();
-        framebuffer.copy_regions(background_framebuffer.get_buffer(), display.get_regions());
-        // Copy the previous bounding box from the background buffer into the LCD buffer
-        display.clear_regions();
-
         // Draw the arrow and return the new bounding box
         let bounding_region = create_arrow(
             &mut framebuffer,
@@ -182,9 +176,12 @@ fn main() -> ! {
         // The bounding box has a pixel padding of 5 pixels around the arrow to prevent the need to draw the background buffer before the next arrow is drawn.
         // This improves performance as only one draw operation occurs instead of 2.
         display.store_region(bounding_region).unwrap();
+        //show all regions by writing them to the display
         display.show_regions(framebuffer.get_buffer()).unwrap();
-
-        //previous_bounding_region = bounding_region;
+        //reset the framebuffer by copying the regions from the background buffer
+        framebuffer.copy_regions(background_framebuffer.get_buffer(), display.get_regions());
+        // Clear all regions and start again.
+        display.clear_regions();
 
         // Ensure each frame takes the exact same amount of time
         let end_ticks = timer.get_counter_low();
