@@ -1,5 +1,5 @@
 [package]
-name = "waveshare-rp2040-lcd-1-28-watch"
+name = "waveshare-rp2040-lcd-1-28-gauge"
 version = "0.8.0"
 authors = ["René van Dorst <opensource@vdorst.com>", "Andrea Nall <anall@andreanal.com>", "TilCreator <contact.github@tc-j.de>", "The rp-rs Developers", "GordonCox"]
 edition = "2018"
