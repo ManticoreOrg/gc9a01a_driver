@@ -257,6 +257,15 @@ fn main() -> ! {
             Point::new(173, 35),
             Rgb565::BLACK,
         );
+
+
+        //Clear the background
+        //let background_differences = background_framebuffer.diff_with(&framebuffer);
+        //display.draw_iter(background_differences).unwrap();
+        //Now Draw the changes.
+        //let differences = framebuffer.diff_with(&background_framebuffer);
+        //display.draw_iter(differences).unwrap();
+        
         display.store_region(east_text_bounding_region).unwrap();
 
         //Display the next set of regions.

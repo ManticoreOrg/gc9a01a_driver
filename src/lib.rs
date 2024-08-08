@@ -5,6 +5,8 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Write;
 use embedded_hal::digital::v2::OutputPin;
+use embedded_graphics::prelude::RawData;
+use embedded_graphics::pixelcolor::raw::RawU16;
 
 /// Enumeration of instructions for the GC9A01A display.
 pub enum Instruction {
@@ -770,6 +772,31 @@ impl<'a> FrameBuffer<'a> {
                 region.y,
             );
         }
+    }
+
+    /// Compares the current frame buffer with another frame buffer and returns an iterator
+    /// of `Pixel` that can be drawn to update the display.
+    ///
+    /// # Arguments
+    ///
+    /// * `other` - The other frame buffer to compare against.
+    ///
+    /// # Returns
+    ///
+    /// An iterator of `Pixel<Rgb565>`.
+    pub fn diff_with<'b>(&'b self, other: &'b FrameBuffer<'a>) -> impl Iterator<Item = Pixel<Rgb565>> + 'b {
+        self.buffer.chunks_exact(2).enumerate().filter_map(move |(i, chunk)| {
+            let other_chunk = &other.buffer[i * 2..i * 2 + 2];
+            if chunk != other_chunk {
+                let x = (i as u32 % self.width) as i32;
+                let y = (i as u32 / self.width) as i32;
+                let raw_color = u16::from_be_bytes([chunk[0], chunk[1]]);
+                let color = Rgb565::from(RawU16::new(raw_color));
+                Some(Pixel(Point::new(x, y), color))
+            } else {
+                None
+            }
+        })
     }
 }
 
