@@ -5,7 +5,6 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Write;
 use embedded_hal::digital::v2::OutputPin;
-use embedded_graphics::prelude::RawData;
 use embedded_graphics::pixelcolor::raw::RawU16;
 
 /// Enumeration of instructions for the GC9A01A display.
